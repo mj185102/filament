@@ -507,7 +507,7 @@ void SimpleViewer::updateUserInterface() {
     auto& lm = mEngine->getLightManager();
 
     // Show a common set of UI widgets for all renderables.
-    auto renderableTreeItem = [this, &rm](utils::Entity entity) {
+    /*auto renderableTreeItem = [this, &rm](utils::Entity entity) {
         bool rvis = mScene->hasEntity(entity);
         ImGui::Checkbox("visible", &rvis);
         if (rvis) {
@@ -528,9 +528,9 @@ void SimpleViewer::updateUserInterface() {
                 ImGui::Text("prim %zu: (unnamed material)", prim);
             }
         }
-    };
+    };*/
 
-    auto lightTreeItem = [this, &lm](utils::Entity entity) {
+    /*auto lightTreeItem = [this, &lm](utils::Entity entity) {
         bool lvis = mScene->hasEntity(entity);
         ImGui::Checkbox("visible", &lvis);
 
@@ -544,296 +544,296 @@ void SimpleViewer::updateUserInterface() {
         bool lcaster = lm.isShadowCaster(instance);
         ImGui::Checkbox("shadow caster", &lcaster);
         lm.setShadowCaster(instance, lcaster);
-    };
+    };*/
 
     // Declare a std::function for tree nodes, it's an easy way to make a recursive lambda.
     std::function<void(utils::Entity)> treeNode;
 
-    treeNode = [&](utils::Entity entity) {
-        auto tinstance = tm.getInstance(entity);
-        auto rinstance = rm.getInstance(entity);
-        auto linstance = lm.getInstance(entity);
-        intptr_t treeNodeId = 1 + entity.getId();
+    //treeNode = [&](utils::Entity entity) {
+    //    auto tinstance = tm.getInstance(entity);
+    //    auto rinstance = rm.getInstance(entity);
+    //    auto linstance = lm.getInstance(entity);
+    //    intptr_t treeNodeId = 1 + entity.getId();
 
-        const char* name = mAsset->getName(entity);
-        auto getLabel = [&name, &rinstance, &linstance]() {
-            if (name) {
-                return name;
-            }
-            if (rinstance) {
-                return "Mesh";
-            }
-            if (linstance) {
-                return "Light";
-            }
-            return "Node";
-        };
-        const char* label = getLabel();
+    //    const char* name = mAsset->getName(entity);
+    //    auto getLabel = [&name, &rinstance, &linstance]() {
+    //        if (name) {
+    //            return name;
+    //        }
+    //        if (rinstance) {
+    //            return "Mesh";
+    //        }
+    //        if (linstance) {
+    //            return "Light";
+    //        }
+    //        return "Node";
+    //    };
+    //    const char* label = getLabel();
 
-        ImGuiTreeNodeFlags flags = 0; // rinstance ? 0 : ImGuiTreeNodeFlags_DefaultOpen;
-        std::vector<utils::Entity> children(tm.getChildCount(tinstance));
-        if (ImGui::TreeNodeEx((const void*) treeNodeId, flags, "%s", label)) {
-            if (rinstance) {
-                renderableTreeItem(entity);
-            }
-            if (linstance) {
-                lightTreeItem(entity);
-            }
-            tm.getChildren(tinstance, children.data(), children.size());
-            for (auto ce : children) {
-                treeNode(ce);
-            }
-            ImGui::TreePop();
-        }
-    };
+    //    ImGuiTreeNodeFlags flags = 0; // rinstance ? 0 : ImGuiTreeNodeFlags_DefaultOpen;
+    //    std::vector<utils::Entity> children(tm.getChildCount(tinstance));
+    //    if (ImGui::TreeNodeEx((const void*) treeNodeId, flags, "%s", label)) {
+    //        if (rinstance) {
+    //            renderableTreeItem(entity);
+    //        }
+    //        if (linstance) {
+    //            lightTreeItem(entity);
+    //        }
+    //        tm.getChildren(tinstance, children.data(), children.size());
+    //        for (auto ce : children) {
+    //            treeNode(ce);
+    //        }
+    //        ImGui::TreePop();
+    //    }
+    //};
 
     // Disable rounding and draw a fixed-height ImGui window that looks like a sidebar.
-    ImGui::GetStyle().WindowRounding = 0;
-    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    //ImGui::GetStyle().WindowRounding = 0;
+    //ImGui::SetNextWindowPos(ImVec2(0, 0));
 
     const float width = ImGui::GetIO().DisplaySize.x;
     const float height = ImGui::GetIO().DisplaySize.y;
-    ImGui::SetNextWindowSize(ImVec2(mSidebarWidth, height), ImGuiCond_Once);
-    ImGui::SetNextWindowSizeConstraints(ImVec2(20, height), ImVec2(width, height));
+    /*ImGui::SetNextWindowSize(ImVec2(mSidebarWidth, height), ImGuiCond_Once);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(20, height), ImVec2(width, height));*/
 
-    ImGui::Begin("Filament", nullptr, ImGuiWindowFlags_NoTitleBar);
-    if (mCustomUI) {
+    //ImGui::Begin("Filament", nullptr, ImGuiWindowFlags_NoTitleBar);
+    /*if (mCustomUI) {
         mCustomUI();
-    }
+    }*/
 
-    DebugRegistry& debug = mEngine->getDebugRegistry();
+    //DebugRegistry& debug = mEngine->getDebugRegistry();
 
-    if (ImGui::CollapsingHeader("View")) {
-        ImGui::Indent();
+    //if (ImGui::CollapsingHeader("View")) {
+    //    ImGui::Indent();
 
-        ImGui::Checkbox("Post-processing", &mSettings.view.postProcessingEnabled);
-        ImGui::Indent();
-            bool dither = mSettings.view.dithering == Dithering::TEMPORAL;
-            ImGui::Checkbox("Dithering", &dither);
-            enableDithering(dither);
-            ImGui::Checkbox("Bloom", &mSettings.view.bloom.enabled);
-            ImGui::Checkbox("Flare", &mSettings.view.bloom.lensFlare);
-        ImGui::Unindent();
+    //    ImGui::Checkbox("Post-processing", &mSettings.view.postProcessingEnabled);
+    //    ImGui::Indent();
+    //        bool dither = mSettings.view.dithering == Dithering::TEMPORAL;
+    //        ImGui::Checkbox("Dithering", &dither);
+    //        enableDithering(dither);
+    //        ImGui::Checkbox("Bloom", &mSettings.view.bloom.enabled);
+    //        ImGui::Checkbox("Flare", &mSettings.view.bloom.lensFlare);
+    //    ImGui::Unindent();
 
-        bool msaa = mSettings.view.sampleCount != 1;
-        ImGui::Checkbox("MSAA 4x", &msaa);
-        enableMsaa(msaa);
+    //    bool msaa = mSettings.view.sampleCount != 1;
+    //    ImGui::Checkbox("MSAA 4x", &msaa);
+    //    enableMsaa(msaa);
 
-        ImGui::Checkbox("TAA", &mSettings.view.taa.enabled);
+    //    ImGui::Checkbox("TAA", &mSettings.view.taa.enabled);
 
-        // this clutters the UI and isn't that useful (except when working on TAA)
-        //ImGui::Indent();
-        //ImGui::SliderFloat("feedback", &mSettings.view.taa.feedback, 0.0f, 1.0f);
-        //ImGui::SliderFloat("filter", &mSettings.view.taa.filterWidth, 0.0f, 2.0f);
-        //ImGui::Unindent();
+    //    // this clutters the UI and isn't that useful (except when working on TAA)
+    //    //ImGui::Indent();
+    //    //ImGui::SliderFloat("feedback", &mSettings.view.taa.feedback, 0.0f, 1.0f);
+    //    //ImGui::SliderFloat("filter", &mSettings.view.taa.filterWidth, 0.0f, 2.0f);
+    //    //ImGui::Unindent();
 
-        bool fxaa = mSettings.view.antiAliasing == AntiAliasing::FXAA;
-        ImGui::Checkbox("FXAA", &fxaa);
-        enableFxaa(fxaa);
+    //    bool fxaa = mSettings.view.antiAliasing == AntiAliasing::FXAA;
+    //    ImGui::Checkbox("FXAA", &fxaa);
+    //    enableFxaa(fxaa);
 
-        ImGui::Checkbox("SSAO", &mSettings.view.ssao.enabled);
+    //    ImGui::Checkbox("SSAO", &mSettings.view.ssao.enabled);
 
-        if (ImGui::CollapsingHeader("SSAO Options")) {
-            auto& ssao = mSettings.view.ssao;
+    //    if (ImGui::CollapsingHeader("SSAO Options")) {
+    //        auto& ssao = mSettings.view.ssao;
 
-            int quality = (int) ssao.quality;
-            int lowpass = (int) ssao.lowPassFilter;
-            bool upsampling = ssao.upsampling != View::QualityLevel::LOW;
+    //        int quality = (int) ssao.quality;
+    //        int lowpass = (int) ssao.lowPassFilter;
+    //        bool upsampling = ssao.upsampling != View::QualityLevel::LOW;
 
-            ImGui::SliderInt("Quality", &quality, 0, 3);
-            ImGui::SliderInt("Low Pass", &lowpass, 0, 2);
-            ImGui::Checkbox("High quality upsampling", &upsampling);
-            ImGui::SliderFloat("Min Horizon angle", &ssao.minHorizonAngleRad, 0.0f, (float)M_PI_4);
+    //        ImGui::SliderInt("Quality", &quality, 0, 3);
+    //        ImGui::SliderInt("Low Pass", &lowpass, 0, 2);
+    //        ImGui::Checkbox("High quality upsampling", &upsampling);
+    //        ImGui::SliderFloat("Min Horizon angle", &ssao.minHorizonAngleRad, 0.0f, (float)M_PI_4);
 
-            ssao.upsampling = upsampling ? View::QualityLevel::HIGH : View::QualityLevel::LOW;
-            ssao.lowPassFilter = (View::QualityLevel) lowpass;
-            ssao.quality = (View::QualityLevel) quality;
+    //        ssao.upsampling = upsampling ? View::QualityLevel::HIGH : View::QualityLevel::LOW;
+    //        ssao.lowPassFilter = (View::QualityLevel) lowpass;
+    //        ssao.quality = (View::QualityLevel) quality;
 
-            if (ImGui::CollapsingHeader("Dominant Light Shadows (experimental)")) {
-                int sampleCount = ssao.ssct.sampleCount;
-                ImGui::Checkbox("Enabled##dls", &ssao.ssct.enabled);
-                ImGui::SliderFloat("Cone angle", &ssao.ssct.lightConeRad, 0.0f, (float)M_PI_2);
-                ImGui::SliderFloat("Shadow Distance", &ssao.ssct.shadowDistance, 0.0f, 10.0f);
-                ImGui::SliderFloat("Contact dist max", &ssao.ssct.contactDistanceMax, 0.0f, 100.0f);
-                ImGui::SliderFloat("Intensity##dls", &ssao.ssct.intensity, 0.0f, 10.0f);
-                ImGui::SliderFloat("Depth bias", &ssao.ssct.depthBias, 0.0f, 1.0f);
-                ImGui::SliderFloat("Depth slope bias", &ssao.ssct.depthSlopeBias, 0.0f, 1.0f);
-                ImGui::SliderInt("Sample Count", &sampleCount, 1, 32);
-                ImGuiExt::DirectionWidget("Direction##dls", ssao.ssct.lightDirection.v);
-                ssao.ssct.sampleCount = sampleCount;
-            }
-        }
-        ImGui::Unindent();
-    }
+    //        if (ImGui::CollapsingHeader("Dominant Light Shadows (experimental)")) {
+    //            int sampleCount = ssao.ssct.sampleCount;
+    //            ImGui::Checkbox("Enabled##dls", &ssao.ssct.enabled);
+    //            ImGui::SliderFloat("Cone angle", &ssao.ssct.lightConeRad, 0.0f, (float)M_PI_2);
+    //            ImGui::SliderFloat("Shadow Distance", &ssao.ssct.shadowDistance, 0.0f, 10.0f);
+    //            ImGui::SliderFloat("Contact dist max", &ssao.ssct.contactDistanceMax, 0.0f, 100.0f);
+    //            ImGui::SliderFloat("Intensity##dls", &ssao.ssct.intensity, 0.0f, 10.0f);
+    //            ImGui::SliderFloat("Depth bias", &ssao.ssct.depthBias, 0.0f, 1.0f);
+    //            ImGui::SliderFloat("Depth slope bias", &ssao.ssct.depthSlopeBias, 0.0f, 1.0f);
+    //            ImGui::SliderInt("Sample Count", &sampleCount, 1, 32);
+    //            ImGuiExt::DirectionWidget("Direction##dls", ssao.ssct.lightDirection.v);
+    //            ssao.ssct.sampleCount = sampleCount;
+    //        }
+    //    }
+    //    ImGui::Unindent();
+    //}
 
     auto& light = mSettings.lighting;
-    if (ImGui::CollapsingHeader("Light")) {
-        ImGui::Indent();
-        if (ImGui::CollapsingHeader("Indirect light")) {
-            ImGui::SliderFloat("IBL intensity", &light.iblIntensity, 0.0f, 100000.0f);
-            ImGui::SliderAngle("IBL rotation", &light.iblRotation);
-        }
-        if (ImGui::CollapsingHeader("Sunlight")) {
-            ImGui::Checkbox("Enable sunlight", &light.enableSunlight);
-            ImGui::SliderFloat("Sun intensity", &light.sunlightIntensity, 50000.0, 150000.0f);
-            ImGuiExt::DirectionWidget("Sun direction", light.sunlightDirection.v);
-        }
-        if (ImGui::CollapsingHeader("All lights")) {
-            ImGui::Checkbox("Enable shadows", &light.enableShadows);
-            int mapSize = light.shadowOptions.mapSize;
-            ImGui::SliderInt("Shadow map size", &mapSize, 32, 1024);
-            light.shadowOptions.mapSize = mapSize;
+    //if (ImGui::CollapsingHeader("Light")) {
+    //    ImGui::Indent();
+    //    if (ImGui::CollapsingHeader("Indirect light")) {
+    //        ImGui::SliderFloat("IBL intensity", &light.iblIntensity, 0.0f, 100000.0f);
+    //        ImGui::SliderAngle("IBL rotation", &light.iblRotation);
+    //    }
+    //    if (ImGui::CollapsingHeader("Sunlight")) {
+    //        ImGui::Checkbox("Enable sunlight", &light.enableSunlight);
+    //        ImGui::SliderFloat("Sun intensity", &light.sunlightIntensity, 50000.0, 150000.0f);
+    //        ImGuiExt::DirectionWidget("Sun direction", light.sunlightDirection.v);
+    //    }
+    //    if (ImGui::CollapsingHeader("All lights")) {
+    //        ImGui::Checkbox("Enable shadows", &light.enableShadows);
+    //        int mapSize = light.shadowOptions.mapSize;
+    //        ImGui::SliderInt("Shadow map size", &mapSize, 32, 1024);
+    //        light.shadowOptions.mapSize = mapSize;
 
 
-            bool enableVsm = mSettings.view.shadowType == ShadowType::VSM;
-            ImGui::Checkbox("Enable VSM", &enableVsm);
-            mSettings.view.shadowType = enableVsm ? ShadowType::VSM : ShadowType::PCF;
+    //        bool enableVsm = mSettings.view.shadowType == ShadowType::VSM;
+    //        ImGui::Checkbox("Enable VSM", &enableVsm);
+    //        mSettings.view.shadowType = enableVsm ? ShadowType::VSM : ShadowType::PCF;
 
-            char label[32];
-            snprintf(label, 32, "%d", 1 << mVsmMsaaSamplesLog2);
-            ImGui::SliderInt("VSM MSAA samples", &mVsmMsaaSamplesLog2, 0, 3, label);
-            light.shadowOptions.vsm.msaaSamples = static_cast<uint8_t>(1u << mVsmMsaaSamplesLog2);
+    //        char label[32];
+    //        snprintf(label, 32, "%d", 1 << mVsmMsaaSamplesLog2);
+    //        ImGui::SliderInt("VSM MSAA samples", &mVsmMsaaSamplesLog2, 0, 3, label);
+    //        light.shadowOptions.vsm.msaaSamples = static_cast<uint8_t>(1u << mVsmMsaaSamplesLog2);
 
-            int vsmAnisotropy = mSettings.view.vsmShadowOptions.anisotropy;
-            snprintf(label, 32, "%d", 1 << vsmAnisotropy);
-            ImGui::SliderInt("VSM anisotropy", &vsmAnisotropy, 0, 3, label);
-            mSettings.view.vsmShadowOptions.anisotropy = vsmAnisotropy;
-            ImGui::Checkbox("VSM mipmapping", &mSettings.view.vsmShadowOptions.mipmapping);
-            ImGui::SliderFloat("VSM blur", &light.shadowOptions.vsm.blurWidth, 0.0f, 125.0f);
+    //        int vsmAnisotropy = mSettings.view.vsmShadowOptions.anisotropy;
+    //        snprintf(label, 32, "%d", 1 << vsmAnisotropy);
+    //        ImGui::SliderInt("VSM anisotropy", &vsmAnisotropy, 0, 3, label);
+    //        mSettings.view.vsmShadowOptions.anisotropy = vsmAnisotropy;
+    //        ImGui::Checkbox("VSM mipmapping", &mSettings.view.vsmShadowOptions.mipmapping);
+    //        ImGui::SliderFloat("VSM blur", &light.shadowOptions.vsm.blurWidth, 0.0f, 125.0f);
 
-            // These are not very useful in practice (defaults are good), but we keep them here for debugging
-            //ImGui::SliderFloat("VSM exponent", &mSettings.view.vsmShadowOptions.exponent, 0.0, 6.0f);
-            //ImGui::SliderFloat("VSM Light bleed", &mSettings.view.vsmShadowOptions.lightBleedReduction, 0.0, 1.0f);
-            //ImGui::SliderFloat("VSM min variance scale", &mSettings.view.vsmShadowOptions.minVarianceScale, 0.0, 10.0f);
+    //        // These are not very useful in practice (defaults are good), but we keep them here for debugging
+    //        //ImGui::SliderFloat("VSM exponent", &mSettings.view.vsmShadowOptions.exponent, 0.0, 6.0f);
+    //        //ImGui::SliderFloat("VSM Light bleed", &mSettings.view.vsmShadowOptions.lightBleedReduction, 0.0, 1.0f);
+    //        //ImGui::SliderFloat("VSM min variance scale", &mSettings.view.vsmShadowOptions.minVarianceScale, 0.0, 10.0f);
 
-            int shadowCascades = light.shadowOptions.shadowCascades;
-            ImGui::SliderInt("Cascades", &shadowCascades, 1, 4);
-            ImGui::Checkbox("Debug cascades",
-                    debug.getPropertyAddress<bool>("d.shadowmap.visualize_cascades"));
-            ImGui::Checkbox("Enable contact shadows", &light.shadowOptions.screenSpaceContactShadows);
-            ImGui::SliderFloat("Split pos 0", &light.shadowOptions.cascadeSplitPositions[0], 0.0f, 1.0f);
-            ImGui::SliderFloat("Split pos 1", &light.shadowOptions.cascadeSplitPositions[1], 0.0f, 1.0f);
-            ImGui::SliderFloat("Split pos 2", &light.shadowOptions.cascadeSplitPositions[2], 0.0f, 1.0f);
-            light.shadowOptions.shadowCascades = shadowCascades;
-        }
-        ImGui::Unindent();
-    }
+    //        int shadowCascades = light.shadowOptions.shadowCascades;
+    //        ImGui::SliderInt("Cascades", &shadowCascades, 1, 4);
+    //        ImGui::Checkbox("Debug cascades",
+    //                debug.getPropertyAddress<bool>("d.shadowmap.visualize_cascades"));
+    //        ImGui::Checkbox("Enable contact shadows", &light.shadowOptions.screenSpaceContactShadows);
+    //        ImGui::SliderFloat("Split pos 0", &light.shadowOptions.cascadeSplitPositions[0], 0.0f, 1.0f);
+    //        ImGui::SliderFloat("Split pos 1", &light.shadowOptions.cascadeSplitPositions[1], 0.0f, 1.0f);
+    //        ImGui::SliderFloat("Split pos 2", &light.shadowOptions.cascadeSplitPositions[2], 0.0f, 1.0f);
+    //        light.shadowOptions.shadowCascades = shadowCascades;
+    //    }
+    //    ImGui::Unindent();
+    //}
 
-    if (ImGui::CollapsingHeader("Fog")) {
-        ImGui::Indent();
-        ImGui::Checkbox("Enable fog", &mSettings.view.fog.enabled);
-        ImGui::SliderFloat("Start", &mSettings.view.fog.distance, 0.0f, 100.0f);
-        ImGui::SliderFloat("Density", &mSettings.view.fog.density, 0.0f, 1.0f);
-        ImGui::SliderFloat("Height", &mSettings.view.fog.height, 0.0f, 100.0f);
-        ImGui::SliderFloat("Height falloff", &mSettings.view.fog.heightFalloff, 0.0f, 10.0f);
-        ImGui::SliderFloat("Scattering start", &mSettings.view.fog.inScatteringStart, 0.0f, 100.0f);
-        ImGui::SliderFloat("Scattering size", &mSettings.view.fog.inScatteringSize, 0.1f, 100.0f);
-        ImGui::Checkbox("Color from IBL", &mSettings.view.fog.fogColorFromIbl);
-        ImGui::ColorPicker3("Color", mSettings.view.fog.color.v);
-        ImGui::Unindent();
-    }
+    //if (ImGui::CollapsingHeader("Fog")) {
+    //    ImGui::Indent();
+    //    ImGui::Checkbox("Enable fog", &mSettings.view.fog.enabled);
+    //    ImGui::SliderFloat("Start", &mSettings.view.fog.distance, 0.0f, 100.0f);
+    //    ImGui::SliderFloat("Density", &mSettings.view.fog.density, 0.0f, 1.0f);
+    //    ImGui::SliderFloat("Height", &mSettings.view.fog.height, 0.0f, 100.0f);
+    //    ImGui::SliderFloat("Height falloff", &mSettings.view.fog.heightFalloff, 0.0f, 10.0f);
+    //    ImGui::SliderFloat("Scattering start", &mSettings.view.fog.inScatteringStart, 0.0f, 100.0f);
+    //    ImGui::SliderFloat("Scattering size", &mSettings.view.fog.inScatteringSize, 0.1f, 100.0f);
+    //    ImGui::Checkbox("Color from IBL", &mSettings.view.fog.fogColorFromIbl);
+    //    ImGui::ColorPicker3("Color", mSettings.view.fog.color.v);
+    //    ImGui::Unindent();
+    //}
 
-    if (ImGui::CollapsingHeader("Scene")) {
-        ImGui::Indent();
+    //if (ImGui::CollapsingHeader("Scene")) {
+    //    ImGui::Indent();
 
-        ImGui::Checkbox("Scale to unit cube", &mSettings.viewer.autoScaleEnabled);
-        updateRootTransform();
+    //    ImGui::Checkbox("Scale to unit cube", &mSettings.viewer.autoScaleEnabled);
+    //    updateRootTransform();
 
-        ImGui::Checkbox("Show skybox", &mSettings.viewer.skyboxEnabled);
-        ImGui::ColorEdit3("Background color", &mSettings.viewer.backgroundColor.r);
+    //    ImGui::Checkbox("Show skybox", &mSettings.viewer.skyboxEnabled);
+    //    ImGui::ColorEdit3("Background color", &mSettings.viewer.backgroundColor.r);
 
-        // We do not yet support ground shadow in remote mode (i.e. when mAsset is null)
-        if (mAsset) {
-            ImGui::Checkbox("Ground shadow", &mSettings.viewer.groundPlaneEnabled);
-            ImGui::Indent();
-            ImGui::SliderFloat("Strength", &mSettings.viewer.groundShadowStrength, 0.0f, 1.0f);
-            ImGui::Unindent();
-        }
+    //    // We do not yet support ground shadow in remote mode (i.e. when mAsset is null)
+    //    if (mAsset) {
+    //        ImGui::Checkbox("Ground shadow", &mSettings.viewer.groundPlaneEnabled);
+    //        ImGui::Indent();
+    //        ImGui::SliderFloat("Strength", &mSettings.viewer.groundShadowStrength, 0.0f, 1.0f);
+    //        ImGui::Unindent();
+    //    }
 
-        ImGui::Unindent();
-    }
+    //    ImGui::Unindent();
+    //}
 
-    if (ImGui::CollapsingHeader("Camera")) {
-        ImGui::Indent();
+    //if (ImGui::CollapsingHeader("Camera")) {
+    //    ImGui::Indent();
 
-        ImGui::SliderFloat("Focal length (mm)", &mSettings.viewer.cameraFocalLength,
-                16.0f, 90.0f);
+    //    ImGui::SliderFloat("Focal length (mm)", &mSettings.viewer.cameraFocalLength,
+    //            16.0f, 90.0f);
 
-        bool dofMedian = mSettings.view.dof.filter == View::DepthOfFieldOptions::Filter::MEDIAN;
-        int dofRingCount = mSettings.view.dof.fastGatherRingCount;
-        int dofMaxCoC = mSettings.view.dof.maxForegroundCOC;
-        if (!dofRingCount) dofRingCount = 5;
-        if (!dofMaxCoC) dofMaxCoC = 32;
+    //    bool dofMedian = mSettings.view.dof.filter == View::DepthOfFieldOptions::Filter::MEDIAN;
+    //    int dofRingCount = mSettings.view.dof.fastGatherRingCount;
+    //    int dofMaxCoC = mSettings.view.dof.maxForegroundCOC;
+    //    if (!dofRingCount) dofRingCount = 5;
+    //    if (!dofMaxCoC) dofMaxCoC = 32;
 
-        ImGui::SliderFloat("Aperture", &mSettings.viewer.cameraAperture, 1.0f, 32.0f);
-        ImGui::SliderFloat("Speed (1/s)", &mSettings.viewer.cameraSpeed, 1000.0f, 1.0f);
-        ImGui::SliderFloat("ISO", &mSettings.viewer.cameraISO, 25.0f, 6400.0f);
-        ImGui::Checkbox("DoF", &mSettings.view.dof.enabled);
-        ImGui::SliderFloat("Focus distance", &mSettings.viewer.cameraFocusDistance, 0.0f, 30.0f);
-        ImGui::SliderFloat("Blur scale", &mSettings.view.dof.cocScale, 0.1f, 10.0f);
-        ImGui::SliderInt("Ring count", &dofRingCount, 1, 17);
-        ImGui::SliderInt("Max CoC", &dofMaxCoC, 1, 32);
-        ImGui::Checkbox("Native Resolution", &mSettings.view.dof.nativeResolution);
-        ImGui::Checkbox("Median Filter", &dofMedian);
+    //    ImGui::SliderFloat("Aperture", &mSettings.viewer.cameraAperture, 1.0f, 32.0f);
+    //    ImGui::SliderFloat("Speed (1/s)", &mSettings.viewer.cameraSpeed, 1000.0f, 1.0f);
+    //    ImGui::SliderFloat("ISO", &mSettings.viewer.cameraISO, 25.0f, 6400.0f);
+    //    ImGui::Checkbox("DoF", &mSettings.view.dof.enabled);
+    //    ImGui::SliderFloat("Focus distance", &mSettings.viewer.cameraFocusDistance, 0.0f, 30.0f);
+    //    ImGui::SliderFloat("Blur scale", &mSettings.view.dof.cocScale, 0.1f, 10.0f);
+    //    ImGui::SliderInt("Ring count", &dofRingCount, 1, 17);
+    //    ImGui::SliderInt("Max CoC", &dofMaxCoC, 1, 32);
+    //    ImGui::Checkbox("Native Resolution", &mSettings.view.dof.nativeResolution);
+    //    ImGui::Checkbox("Median Filter", &dofMedian);
 
-        mSettings.view.dof.filter = dofMedian ?
-                                    View::DepthOfFieldOptions::Filter::MEDIAN :
-                                    View::DepthOfFieldOptions::Filter::NONE;
-        mSettings.view.dof.backgroundRingCount = dofRingCount;
-        mSettings.view.dof.foregroundRingCount = dofRingCount;
-        mSettings.view.dof.fastGatherRingCount = dofRingCount;
-        mSettings.view.dof.maxForegroundCOC = dofMaxCoC;
-        mSettings.view.dof.maxBackgroundCOC = dofMaxCoC;
+    //    mSettings.view.dof.filter = dofMedian ?
+    //                                View::DepthOfFieldOptions::Filter::MEDIAN :
+    //                                View::DepthOfFieldOptions::Filter::NONE;
+    //    mSettings.view.dof.backgroundRingCount = dofRingCount;
+    //    mSettings.view.dof.foregroundRingCount = dofRingCount;
+    //    mSettings.view.dof.fastGatherRingCount = dofRingCount;
+    //    mSettings.view.dof.maxForegroundCOC = dofMaxCoC;
+    //    mSettings.view.dof.maxBackgroundCOC = dofMaxCoC;
 
-        if (ImGui::CollapsingHeader("Vignette")) {
-            ImGui::Checkbox("Enabled##vignetteEnabled", &mSettings.view.vignette.enabled);
-            ImGui::SliderFloat("Mid point", &mSettings.view.vignette.midPoint, 0.0f, 1.0f);
-            ImGui::SliderFloat("Roundness", &mSettings.view.vignette.roundness, 0.0f, 1.0f);
-            ImGui::SliderFloat("Feather", &mSettings.view.vignette.feather, 0.0f, 1.0f);
-            ImGui::ColorEdit3("Color##vignetteColor", &mSettings.view.vignette.color.r);
-        }
+    //    if (ImGui::CollapsingHeader("Vignette")) {
+    //        ImGui::Checkbox("Enabled##vignetteEnabled", &mSettings.view.vignette.enabled);
+    //        ImGui::SliderFloat("Mid point", &mSettings.view.vignette.midPoint, 0.0f, 1.0f);
+    //        ImGui::SliderFloat("Roundness", &mSettings.view.vignette.roundness, 0.0f, 1.0f);
+    //        ImGui::SliderFloat("Feather", &mSettings.view.vignette.feather, 0.0f, 1.0f);
+    //        ImGui::ColorEdit3("Color##vignetteColor", &mSettings.view.vignette.color.r);
+    //    }
 
-        // We do not yet support camera selection in the remote UI. To support this feature, we
-        // would need to send a message from DebugServer to the WebSockets client.
-        if (mAsset != nullptr) {
+    //    // We do not yet support camera selection in the remote UI. To support this feature, we
+    //    // would need to send a message from DebugServer to the WebSockets client.
+    //    if (mAsset != nullptr) {
 
-            const utils::Entity* cameras = mAsset->getCameraEntities();
-            const size_t cameraCount = mAsset->getCameraEntityCount();
+    //        const utils::Entity* cameras = mAsset->getCameraEntities();
+    //        const size_t cameraCount = mAsset->getCameraEntityCount();
 
-            std::vector<std::string> names;
-            names.reserve(cameraCount + 1);
-            names.push_back("Free camera");
-            int c = 0;
-            for (size_t i = 0; i < cameraCount; i++) {
-                const char* n = mAsset->getName(cameras[i]);
-                if (n) {
-                    names.emplace_back(n);
-                } else {
-                    char buf[32];
-                    sprintf(buf, "Unnamed camera %d", c++);
-                    names.emplace_back(buf);
-                }
-            }
+    //        std::vector<std::string> names;
+    //        names.reserve(cameraCount + 1);
+    //        names.push_back("Free camera");
+    //        int c = 0;
+    //        for (size_t i = 0; i < cameraCount; i++) {
+    //            const char* n = mAsset->getName(cameras[i]);
+    //            if (n) {
+    //                names.emplace_back(n);
+    //            } else {
+    //                char buf[32];
+    //                sprintf(buf, "Unnamed camera %d", c++);
+    //                names.emplace_back(buf);
+    //            }
+    //        }
 
-            std::vector<const char*> cstrings;
-            cstrings.reserve(names.size());
-            for (size_t i = 0; i < names.size(); i++) {
-                cstrings.push_back(names[i].c_str());
-            }
+    //        std::vector<const char*> cstrings;
+    //        cstrings.reserve(names.size());
+    //        for (size_t i = 0; i < names.size(); i++) {
+    //            cstrings.push_back(names[i].c_str());
+    //        }
 
-            ImGui::ListBox("Cameras", &mCurrentCamera, cstrings.data(), cstrings.size());
-        }
+    //        ImGui::ListBox("Cameras", &mCurrentCamera, cstrings.data(), cstrings.size());
+    //    }
 
-        ImGui::Unindent();
-    }
+    //    ImGui::Unindent();
+    //}
 
-    colorGradingUI(mSettings, mRangePlot, mCurvePlot);
+    //colorGradingUI(mSettings, mRangePlot, mCurvePlot);
 
     // At this point, all View settings have been modified,
     //  so we can now push them into the Filament View.
     applySettings(mSettings.view, mView);
 
-    if (light.enableSunlight) {
+    /*if (light.enableSunlight) {
         mScene->addEntity(mSunlight);
         auto sun = lm.getInstance(mSunlight);
         lm.setIntensity(sun, light.sunlightIntensity);
@@ -843,51 +843,51 @@ void SimpleViewer::updateUserInterface() {
         lm.setShadowOptions(sun, light.shadowOptions);
     } else {
         mScene->remove(mSunlight);
-    }
+    }*/
 
     lm.forEachComponent([this, &lm, &light](utils::Entity e, LightManager::Instance ci) {
         lm.setShadowOptions(ci, light.shadowOptions);
         lm.setShadowCaster(ci, light.enableShadows);
     });
 
-    if (mAsset != nullptr) {
-        if (ImGui::CollapsingHeader("Hierarchy")) {
-            ImGui::Indent();
-            ImGui::Checkbox("Show bounds", &mEnableWireframe);
-            treeNode(mAsset->getRoot());
-            ImGui::Unindent();
-        }
+    //if (mAsset != nullptr) {
+    //    if (ImGui::CollapsingHeader("Hierarchy")) {
+    //        ImGui::Indent();
+    //        ImGui::Checkbox("Show bounds", &mEnableWireframe);
+    //        treeNode(mAsset->getRoot());
+    //        ImGui::Unindent();
+    //    }
 
-        // We do not yet support animation selection in the remote UI. To support this feature, we
-        // would need to send a message from DebugServer to the WebSockets client.
-        if (mAnimator && mAnimator->getAnimationCount() > 0 &&
-                ImGui::CollapsingHeader("Animation")) {
-            ImGui::Indent();
-            int selectedAnimation = mCurrentAnimation;
-            ImGui::RadioButton("Disable", &selectedAnimation, 0);
-            for (size_t i = 0, count = mAnimator->getAnimationCount(); i < count; ++i) {
-                std::string label = mAnimator->getAnimationName(i);
-                if (label.empty()) {
-                    label = "Unnamed " + std::to_string(i);
-                }
-                ImGui::RadioButton(label.c_str(), &selectedAnimation, i + 1);
-            }
-            if (selectedAnimation != mCurrentAnimation) {
-                mCurrentAnimation = selectedAnimation;
-                mResetAnimation = true;
-            }
-            ImGui::Unindent();
-        }
+    //    // We do not yet support animation selection in the remote UI. To support this feature, we
+    //    // would need to send a message from DebugServer to the WebSockets client.
+    //    if (mAnimator && mAnimator->getAnimationCount() > 0 &&
+    //            ImGui::CollapsingHeader("Animation")) {
+    //        ImGui::Indent();
+    //        int selectedAnimation = mCurrentAnimation;
+    //        ImGui::RadioButton("Disable", &selectedAnimation, 0);
+    //        for (size_t i = 0, count = mAnimator->getAnimationCount(); i < count; ++i) {
+    //            std::string label = mAnimator->getAnimationName(i);
+    //            if (label.empty()) {
+    //                label = "Unnamed " + std::to_string(i);
+    //            }
+    //            ImGui::RadioButton(label.c_str(), &selectedAnimation, i + 1);
+    //        }
+    //        if (selectedAnimation != mCurrentAnimation) {
+    //            mCurrentAnimation = selectedAnimation;
+    //            mResetAnimation = true;
+    //        }
+    //        ImGui::Unindent();
+    //    }
 
-        if (mEnableWireframe) {
-            mScene->addEntity(mAsset->getWireframe());
-        } else {
-            mScene->remove(mAsset->getWireframe());
-        }
-    }
+    //    if (mEnableWireframe) {
+    //        mScene->addEntity(mAsset->getWireframe());
+    //    } else {
+    //        mScene->remove(mAsset->getWireframe());
+    //    }
+    //}
 
     mSidebarWidth = ImGui::GetWindowWidth();
-    ImGui::End();
+    //ImGui::End();
 
     updateIndirectLight();
 }

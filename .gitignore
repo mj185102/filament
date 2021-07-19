@@ -16,3 +16,5 @@ settings.json
 test*.png
 test*.json
 results
+*.ipch
+.vs/

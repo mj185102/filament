@@ -160,17 +160,18 @@ int main(int argc, char** argv) {
 
     app.config.title = "glTF Instancing";
     app.config.iblDirectory = FilamentApp::getRootAssetsPath() + DEFAULT_IBL;
+    app.config.backend = Engine::Backend::OPENGL;
 
     int optionIndex = handleCommandLineArguments(argc, argv, &app);
-    utils::Path filename;
+    utils::Path filename = R"(c:\Users\mj185102\OneDrive - NCR Corporation\Documents\untitled.glb)";
     int num_args = argc - optionIndex;
-    if (num_args >= 1) {
+    /*if (num_args >= 1) {
         filename = argv[optionIndex];
         if (!filename.exists()) {
             std::cerr << "file " << filename << " not found!" << std::endl;
             return 1;
         }
-    }
+    }*/
 
     auto loadAsset = [&app](utils::Path filename) {
         // Peek at the file size to allow pre-allocation.

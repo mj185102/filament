@@ -65,7 +65,8 @@ static const Config config {
     .title = "shadowtest",
     .iblDirectory = FilamentApp::getRootAssetsPath() + IBL_FOLDER,
     .scale = 1,
-    .splitView = false
+    .splitView = false,
+    .backend = Engine::Backend::OPENGL
 };
 
 int main(int argc, char** argv) {

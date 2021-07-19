@@ -70,7 +70,91 @@ enum MaterialSource {
     LOAD_UBERSHADERS,
 };
 
+bool screenShotTaken = false;
+
+
+void writeImage(const char* filename, unsigned char* data, int w, int h)
+{
+    {
+        typedef struct                       /**** BMP file header structure ****/
+        {
+            unsigned int   bfSize;           /* Size of file */
+            unsigned short bfReserved1;      /* Reserved */
+            unsigned short bfReserved2;      /* ... */
+            unsigned int   bfOffBits;        /* Offset to bitmap data */
+        } BITMAPFILEHEADER;
+
+        typedef struct                       /**** BMP file info structure ****/
+        {
+            unsigned int   biSize;           /* Size of info header */
+            int            biWidth;          /* Width of image */
+            int            biHeight;         /* Height of image */
+            unsigned short biPlanes;         /* Number of color planes */
+            unsigned short biBitCount;       /* Number of bits per pixel */
+            unsigned int   biCompression;    /* Type of compression to use */
+            unsigned int   biSizeImage;      /* Size of image data */
+            int            biXPelsPerMeter;  /* X pixels per meter */
+            int            biYPelsPerMeter;  /* Y pixels per meter */
+            unsigned int   biClrUsed;        /* Number of colors used */
+            unsigned int   biClrImportant;   /* Number of important colors */
+        } BITMAPINFOHEADER;
+
+        BITMAPFILEHEADER bfh;
+        BITMAPINFOHEADER bih;
+
+        /* Magic number for file. It does not fit in the header structure due to alignment requirements, so put it outside */
+        unsigned short bfType = 0x4d42;
+        bfh.bfReserved1 = 0;
+        bfh.bfReserved2 = 0;
+        bfh.bfSize = 2 + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + w * h * 3;
+        bfh.bfOffBits = 0x36;
+
+        bih.biSize = sizeof(BITMAPINFOHEADER);
+        bih.biWidth = w;
+        bih.biHeight = h;
+        bih.biPlanes = 1;
+        bih.biBitCount = 24;
+        bih.biCompression = 0;
+        bih.biSizeImage = 0;
+        bih.biXPelsPerMeter = 5000;
+        bih.biYPelsPerMeter = 5000;
+        bih.biClrUsed = 0;
+        bih.biClrImportant = 0;
+
+        FILE* file = fopen(filename, "wb");
+        if (!file)
+        {
+            printf("Could not write file\n");
+            return;
+        }
+
+        /*Write headers*/
+        fwrite(&bfType, 1, sizeof(bfType), file);
+        fwrite(&bfh, 1, sizeof(bfh), file);
+        fwrite(&bih, 1, sizeof(bih), file);
+        //fwrite(data,1,  w* h * 3, file);
+        /*Write bitmap*/
+        for (int y = h - 1; y >= 0; y--) /*Scanline loop backwards*/
+        {
+            for (int x = 0; x < w; x++) /*Column loop forwards*/
+            {
+                unsigned char r = data[y * w * 3 + x * 3];
+                unsigned char g = data[y * w * 3 + x * 3 + 1];
+                unsigned char b = data[y * w * 3 + x * 3 + 2];
+
+                fwrite(&b, 1, 1, file);
+                fwrite(&g, 1, 1, file);
+                fwrite(&r, 1, 1, file);
+            }
+        }
+        fclose(file);
+    }
+}
+
+
+
 struct App {
+    bool screenShotTaken = false;
     Engine* engine;
     SimpleViewer* viewer;
     Config config;
@@ -355,11 +439,13 @@ int main(int argc, char** argv) {
 
     app.config.title = "Filament";
     app.config.iblDirectory = FilamentApp::getRootAssetsPath() + DEFAULT_IBL;
+    app.config.backend = Engine::Backend::OPENGL;
+    app.config.headless = true;
 
-    int optionIndex = handleCommandLineArguments(argc, argv, &app);
+    //int optionIndex = handleCommandLineArguments(argc, argv, &app);
 
-    utils::Path filename;
-    int num_args = argc - optionIndex;
+    utils::Path filename = R"(c:\Users\mj185102\OneDrive - NCR Corporation\Documents\untitled.glb)";
+    /*int num_args = argc - optionIndex;
     if (num_args >= 1) {
         filename = argv[optionIndex];
         if (!filename.exists()) {
@@ -379,7 +465,7 @@ int main(int argc, char** argv) {
                 return 1;
             }
         }
-    }
+    }*/
 
     auto loadAsset = [&app](utils::Path filename) {
         // Peek at the file size to allow pre-allocation.
@@ -423,7 +509,7 @@ int main(int argc, char** argv) {
         if (!app.resourceLoader) {
             app.resourceLoader = new gltfio::ResourceLoader(configuration);
         }
-        app.resourceLoader->asyncBeginLoad(app.asset);
+        app.resourceLoader->loadResources(app.asset);
 
         // Load animation data then free the source hierarchy.
         app.asset->getAnimator();
@@ -435,17 +521,60 @@ int main(int argc, char** argv) {
         }
     };
 
+    auto animate = [&app](Engine* engine, View* view, double now) {
+        //app.resourceLoader->asyncUpdateLoad();
+
+        // Optionally fit the model into a unit cube at the origin.
+        app.viewer->updateRootTransform();
+
+
+        auto entity = app.asset->getFirstEntityByName("Cube");
+
+        /*auto ddd = engine->getTransformManager().getInstance(entity);
+        auto renderableManagerInstance =  engine->getRenderableManager().getInstance(entity);*/
+        //renderableManagerInstance
+
+        /*engine->getTransformManager().setTransform(engine->getTransformManager().getInstance(entity),
+            mat4f(
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                0.0f, -1.2f, 0.0f, 1.0f
+            ));*/
+        
+        // 
+        //engine->getTransformManager().getChildren(engine->getTransformManager().getInstance(), &entity, 1);
+        // Add renderables to the scene as they become ready.
+        app.viewer->populateScene(app.asset);
+
+        app.viewer->applyAnimation(now);
+    };
+
+    auto resize = [&app](Engine* engine, View* view) {
+        Camera& camera = view->getCamera();
+        if (&camera == app.mainCamera) {
+            // Don't adjut the aspect ratio of the main camera, this is done inside of
+            // FilamentApp.cpp
+            return;
+        }
+        const Viewport& vp = view->getViewport();
+        double aspectRatio = (double)vp.width / vp.height;
+        camera.setScaling({ 1.0 / aspectRatio, 1.0 });
+    };
+
     auto setup = [&](Engine* engine, View* view, Scene* scene) {
         app.engine = engine;
         app.names = new NameComponentManager(EntityManager::get());
         app.viewer = new SimpleViewer(engine, scene, view, 410);
         app.viewer->getSettings().viewer.autoScaleEnabled = !app.actualSize;
-
+        
+        //view->setScreenSpaceRefractionEnabled(false);
+        //view->setViewport(Viewport)
         const bool batchMode = !app.batchFile.empty();
 
         // First check if a custom automation spec has been provided. If it fails to load, the app
         // must be closed since it could be invoked from a script.
-        if (batchMode && app.batchFile != "default") {
+        /*if (batchMode && app.batchFile != "default") {
             auto size = getFileSize(app.batchFile.c_str());
             if (size > 0) {
                 std::ifstream in(app.batchFile, std::ifstream::binary | std::ifstream::in);
@@ -460,7 +589,7 @@ int main(int argc, char** argv) {
                 std::cerr << "Unable to load automation spec: " << app.batchFile << std::endl;
                 exit(1);
             }
-        }
+        }*/
 
         // If no custom spec has been provided, or if in interactive mode, load the default spec.
         if (!app.automationSpec) {
@@ -469,7 +598,7 @@ int main(int argc, char** argv) {
 
         app.automationEngine = new AutomationEngine(app.automationSpec, &app.viewer->getSettings());
 
-        if (batchMode) {
+        /*if (batchMode) {
             app.automationEngine->startBatchMode();
             auto options = app.automationEngine->getOptions();
             options.sleepDuration = 0.0;
@@ -486,109 +615,212 @@ int main(int argc, char** argv) {
             } else {
                 std::cerr << "Failed to load settings from " << app.settingsFile << std::endl;
             }
-        }
+        }*/
 
         app.materials = (app.materialSource == GENERATE_SHADERS) ?
                 createMaterialGenerator(engine) : createUbershaderLoader(engine);
         app.assetLoader = AssetLoader::create({engine, app.materials, app.names });
         app.mainCamera = &view->getCamera();
-        if (filename.isEmpty()) {
+        /*if (filename.isEmpty()) {
             app.asset = app.assetLoader->createAssetFromBinary(
                     GLTF_VIEWER_DAMAGEDHELMET_DATA,
                     GLTF_VIEWER_DAMAGEDHELMET_SIZE);
         } else {
             loadAsset(filename);
-        }
-
+        }*/
+        loadAsset(filename); // + added
         loadResources(filename);
 
         createGroundPlane(engine, scene, app);
 
-        app.viewer->setUiCallback([&app, scene, view, engine] () {
-            auto& automation = *app.automationEngine;
+        //app.viewer->setUiCallback([&app, scene, view, engine] () {
+        //    auto& automation = *app.automationEngine;
 
-            float progress = app.resourceLoader->asyncGetLoadProgress();
-            if (progress < 1.0) {
-                ImGui::ProgressBar(progress);
-            } else {
-                // The model is now fully loaded, so let automation know.
-                automation.signalBatchMode();
+        //    float progress = app.resourceLoader->asyncGetLoadProgress();
+        //    if (progress < 1.0) {
+        //        ImGui::ProgressBar(progress);
+        //    } else {
+        //        // The model is now fully loaded, so let automation know.
+        //        automation.signalBatchMode();
+        //    }
+
+        //    // The screenshots do not include the UI, but we auto-open the Automation UI group
+        //    // when in batch mode. This is useful when a human is observing progress.
+        //    const int flags = automation.isBatchModeEnabled() ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+
+        //    if (ImGui::CollapsingHeader("Automation", flags)) {
+        //        ImGui::Indent();
+
+        //        const ImVec4 yellow(1.0f,1.0f,0.0f,1.0f);
+        //        if (automation.isRunning()) {
+        //            ImGui::TextColored(yellow, "Test case %zu / %zu",
+        //                    automation.currentTest(), automation.testCount());
+        //        } else {
+        //            ImGui::TextColored(yellow, "%zu test cases", automation.testCount());
+        //        }
+
+        //        auto options = automation.getOptions();
+
+        //        ImGui::PushItemWidth(150);
+        //        ImGui::SliderFloat("Sleep (seconds)", &options.sleepDuration, 0.0, 5.0);
+        //        ImGui::PopItemWidth();
+
+        //        // Hide the tooltip during automation to avoid photobombing the screenshot.
+        //        if (ImGui::IsItemHovered() && !automation.isRunning()) {
+        //            ImGui::SetTooltip("Specifies the amount of time to sleep between test cases.");
+        //        }
+
+        //        ImGui::Checkbox("Export screenshot for each test", &options.exportScreenshots);
+        //        ImGui::Checkbox("Export settings JSON for each test", &options.exportSettings);
+
+        //        automation.setOptions(options);
+
+        //        if (automation.isRunning()) {
+        //            if (ImGui::Button("Stop batch test")) {
+        //                automation.stopRunning();
+        //            }
+        //        } else if (ImGui::Button("Run batch test")) {
+        //            automation.startRunning();
+        //        }
+
+        //        if (ImGui::Button("Export view settings")) {
+        //            automation.exportSettings(app.viewer->getSettings(), "settings.json");
+        //            app.messageBoxText = automation.getStatusMessage();
+        //            ImGui::OpenPopup("MessageBox");
+        //        }
+        //        ImGui::Unindent();
+        //    }
+
+        //    if (ImGui::CollapsingHeader("Stats")) {
+        //        ImGui::Indent();
+        //        ImGui::Text("%zu entities in the asset", app.asset->getEntityCount());
+        //        ImGui::Text("%zu renderables (excluding UI)", scene->getRenderableCount());
+        //        ImGui::Text("%zu skipped frames", FilamentApp::get().getSkippedFrameCount());
+        //        ImGui::Unindent();
+        //    }
+
+        //    if (ImGui::CollapsingHeader("Debug")) {
+        //        if (ImGui::Button("Capture frame")) {
+        //            auto& debug = engine->getDebugRegistry();
+        //            bool* captureFrame =
+        //                debug.getPropertyAddress<bool>("d.renderer.doFrameCapture");
+        //            *captureFrame = true;
+        //        }
+        //        ImGui::SliderFloat("scale", &sGlobalScale, 0.25f, 1.0f);
+        //        ImGui::SliderFloat("anamorphism", &sGlobalScaleAnamorphism, -1.0f, 1.0f);
+        //    }
+
+        //    if (ImGui::BeginPopupModal("MessageBox", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        //        ImGui::Text("%s", app.messageBoxText.c_str());
+        //        if (ImGui::Button("OK", ImVec2(120, 0))) {
+        //            ImGui::CloseCurrentPopup();
+        //        }
+        //        ImGui::EndPopup();
+        //    }
+        //});
+
+        //resize(engine, view);
+
+        auto& tm = engine->getTransformManager();
+        auto& rm = engine->getRenderableManager();
+        auto& lm = engine->getLightManager();
+
+
+        std::function<void(utils::Entity)> treeNode;
+
+        auto renderableTreeItem = [&rm](utils::Entity entity) {
+            auto instance = rm.getInstance(entity);
+            bool scaster = rm.isShadowCaster(instance);
+            rm.setCastShadows(instance, scaster);
+        };
+
+        auto lightTreeItem = [ &lm](utils::Entity entity) {
+            auto instance = lm.getInstance(entity);
+            bool lcaster = lm.isShadowCaster(instance);
+            lm.setShadowCaster(instance, lcaster);
+        };
+
+        treeNode = [&](utils::Entity entity) {
+            auto tinstance = tm.getInstance(entity);
+            auto rinstance = rm.getInstance(entity);
+            auto linstance = lm.getInstance(entity);
+            intptr_t treeNodeId = 1 + entity.getId();
+
+            const char* name = app.asset->getName(entity);
+
+            std::vector<utils::Entity> children(tm.getChildCount(tinstance));
+            if (rinstance) {
+                renderableTreeItem(entity);
             }
-
-            // The screenshots do not include the UI, but we auto-open the Automation UI group
-            // when in batch mode. This is useful when a human is observing progress.
-            const int flags = automation.isBatchModeEnabled() ? ImGuiTreeNodeFlags_DefaultOpen : 0;
-
-            if (ImGui::CollapsingHeader("Automation", flags)) {
-                ImGui::Indent();
-
-                const ImVec4 yellow(1.0f,1.0f,0.0f,1.0f);
-                if (automation.isRunning()) {
-                    ImGui::TextColored(yellow, "Test case %zu / %zu",
-                            automation.currentTest(), automation.testCount());
-                } else {
-                    ImGui::TextColored(yellow, "%zu test cases", automation.testCount());
-                }
-
-                auto options = automation.getOptions();
-
-                ImGui::PushItemWidth(150);
-                ImGui::SliderFloat("Sleep (seconds)", &options.sleepDuration, 0.0, 5.0);
-                ImGui::PopItemWidth();
-
-                // Hide the tooltip during automation to avoid photobombing the screenshot.
-                if (ImGui::IsItemHovered() && !automation.isRunning()) {
-                    ImGui::SetTooltip("Specifies the amount of time to sleep between test cases.");
-                }
-
-                ImGui::Checkbox("Export screenshot for each test", &options.exportScreenshots);
-                ImGui::Checkbox("Export settings JSON for each test", &options.exportSettings);
-
-                automation.setOptions(options);
-
-                if (automation.isRunning()) {
-                    if (ImGui::Button("Stop batch test")) {
-                        automation.stopRunning();
-                    }
-                } else if (ImGui::Button("Run batch test")) {
-                    automation.startRunning();
-                }
-
-                if (ImGui::Button("Export view settings")) {
-                    automation.exportSettings(app.viewer->getSettings(), "settings.json");
-                    app.messageBoxText = automation.getStatusMessage();
-                    ImGui::OpenPopup("MessageBox");
-                }
-                ImGui::Unindent();
+            if (linstance) {
+                lightTreeItem(entity);
             }
-
-            if (ImGui::CollapsingHeader("Stats")) {
-                ImGui::Indent();
-                ImGui::Text("%zu entities in the asset", app.asset->getEntityCount());
-                ImGui::Text("%zu renderables (excluding UI)", scene->getRenderableCount());
-                ImGui::Text("%zu skipped frames", FilamentApp::get().getSkippedFrameCount());
-                ImGui::Unindent();
+            tm.getChildren(tinstance, children.data(), children.size());
+            for (auto ce : children) {
+                treeNode(ce);
             }
+        };
 
-            if (ImGui::CollapsingHeader("Debug")) {
-                if (ImGui::Button("Capture frame")) {
-                    auto& debug = engine->getDebugRegistry();
-                    bool* captureFrame =
-                        debug.getPropertyAddress<bool>("d.renderer.doFrameCapture");
-                    *captureFrame = true;
-                }
-                ImGui::SliderFloat("scale", &sGlobalScale, 0.25f, 1.0f);
-                ImGui::SliderFloat("anamorphism", &sGlobalScaleAnamorphism, -1.0f, 1.0f);
-            }
 
-            if (ImGui::BeginPopupModal("MessageBox", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-                ImGui::Text("%s", app.messageBoxText.c_str());
-                if (ImGui::Button("OK", ImVec2(120, 0))) {
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
-            }
-        });
+
+        treeNode(app.asset->getRoot());
+
+
+        AmbientOcclusionOptions ssao;
+
+        int quality = (int) ssao.quality;
+        int lowpass = (int) ssao.lowPassFilter;
+        ssao.upsampling = View::QualityLevel::ULTRA;
+        ssao.lowPassFilter = (View::QualityLevel) lowpass;
+        ssao.quality = (View::QualityLevel) quality;
+
+        //            int sampleCount = ssao.ssct.sampleCount;
+        //            ImGui::Checkbox("Enabled##dls", &ssao.ssct.enabled);
+        //            ImGui::SliderFloat("Cone angle", &ssao.ssct.lightConeRad, 0.0f, (float)M_PI_2);
+        //            ImGui::SliderFloat("Shadow Distance", &ssao.ssct.shadowDistance, 0.0f, 10.0f);
+        //            ImGui::SliderFloat("Contact dist max", &ssao.ssct.contactDistanceMax, 0.0f, 100.0f);
+        //            ImGui::SliderFloat("Intensity##dls", &ssao.ssct.intensity, 0.0f, 10.0f);
+        //            ImGui::SliderFloat("Depth bias", &ssao.ssct.depthBias, 0.0f, 1.0f);
+        //            ImGui::SliderFloat("Depth slope bias", &ssao.ssct.depthSlopeBias, 0.0f, 1.0f);
+        //            ImGui::SliderInt("Sample Count", &sampleCount, 1, 32);
+        //            ImGuiExt::DirectionWidget("Direction##dls", ssao.ssct.lightDirection.v);
+        //            ssao.ssct.sampleCount = sampleCount;
+
+
+        VsmShadowOptions vsmShadowOptions;
+        vsmShadowOptions.anisotropy = 0;
+        
+        ssao.enabled = true;
+        BloomOptions bloom;
+        bloom.enabled = true;
+        FogOptions fog;
+        DepthOfFieldOptions dof;
+        VignetteOptions vignette;
+        RenderQuality renderQuality;
+        TemporalAntiAliasingOptions taa;
+        DynamicLightingSettings dynamicLighting;
+
+        view->setSampleCount(4);
+        view->setAntiAliasing(AntiAliasing::FXAA);
+        view->setTemporalAntiAliasingOptions(taa);
+        view->setAmbientOcclusionOptions(ssao);
+        view->setBloomOptions(bloom);
+        view->setFogOptions(fog);
+        view->setDepthOfFieldOptions(dof);
+        view->setVignetteOptions(vignette);
+        view->setDithering(Dithering::TEMPORAL);
+        view->setRenderQuality(renderQuality);
+        view->setDynamicLightingOptions(dynamicLighting.zLightNear,
+            dynamicLighting.zLightFar);
+        view->setShadowType(ShadowType::PCF);
+        view->setVsmShadowOptions(vsmShadowOptions);
+        view->setPostProcessingEnabled(true);
+
+        LightSettings light;
+        lm.forEachComponent([&lm, &light](utils::Entity e, LightManager::Instance ci) {
+            lm.setShadowOptions(ci, light.shadowOptions);
+            lm.setShadowCaster(ci, light.enableShadows);
+            });
     };
 
     auto cleanup = [&app](Engine* engine, View*, Scene*) {
@@ -610,47 +842,28 @@ int main(int argc, char** argv) {
         AssetLoader::destroy(&app.assetLoader);
     };
 
-    auto animate = [&app](Engine* engine, View* view, double now) {
-        app.resourceLoader->asyncUpdateLoad();
-
-        // Optionally fit the model into a unit cube at the origin.
-        app.viewer->updateRootTransform();
-
-        // Add renderables to the scene as they become ready.
-        app.viewer->populateScene(app.asset);
-
-        app.viewer->applyAnimation(now);
-    };
-
-    auto resize = [&app](Engine* engine, View* view) {
-        Camera& camera = view->getCamera();
-        if (&camera == app.mainCamera) {
-            // Don't adjut the aspect ratio of the main camera, this is done inside of
-            // FilamentApp.cpp
-            return;
-        }
-        const Viewport& vp = view->getViewport();
-        double aspectRatio = (double) vp.width / vp.height;
-        camera.setScaling({1.0 / aspectRatio, 1.0 });
-    };
+    
 
     auto gui = [&app](Engine* engine, View* view) {
-        app.viewer->updateUserInterface();
+        //filament::viewer::applySettings(app.viewer->getSettings().view, view);
+        //app.viewer->updateUserInterface();
+        //app.viewer->updateRootTransform();
+        //FilamentApp::get().setSidebarWidth(app.viewer->getSidebarWidth());
 
-        FilamentApp::get().setSidebarWidth(app.viewer->getSidebarWidth());
+        
     };
 
     auto preRender = [&app](Engine* engine, View* view, Scene* scene, Renderer* renderer) {
         auto& rcm = engine->getRenderableManager();
         auto instance = rcm.getInstance(app.scene.groundPlane);
-        const auto viewerOptions = app.automationEngine->getViewerOptions();
+        //const auto viewerOptions = app.automationEngine->getViewerOptions();
         const auto& dofOptions = app.viewer->getSettings().view.dof;
-        rcm.setLayerMask(instance,
-                0xff, viewerOptions.groundPlaneEnabled ? 0xff : 0x00);
+        //rcm.setLayerMask(instance,
+        //        0xff, viewerOptions.groundPlaneEnabled ? 0xff : 0x00);
 
         // Note that this focal length might be different from the slider value because the
         // automation engine applies Camera::computeEffectiveFocalLength when DoF is enabled.
-        FilamentApp::get().getCameraFocalLength() = viewerOptions.cameraFocalLength;
+        //FilamentApp::get().getCameraFocalLength() = viewerOptions.cameraFocalLength;
 
         const size_t cameraCount = app.asset->getCameraEntityCount();
         view->setCamera(app.mainCamera);
@@ -669,8 +882,8 @@ int main(int argc, char** argv) {
             camera->setScaling({1.0 / aspectRatio, 1.0});
         }
 
-        app.scene.groundMaterial->setDefaultParameter(
-                "strength", viewerOptions.groundShadowStrength);
+        //app.scene.groundMaterial->setDefaultParameter(
+        //        "strength", viewerOptions.groundShadowStrength);
 
         // This applies clear options, the skybox mask, and some camera settings.
         Camera& camera = view->getCamera();
@@ -706,6 +919,13 @@ int main(int argc, char** argv) {
                 },
                 .enabled = sGlobalScale != 1.0f,
         });
+
+
+    };
+
+    struct XXX
+    {
+        const Viewport* vp;
     };
 
     auto postRender = [&app](Engine* engine, View* view, Scene* scene, Renderer* renderer) {
@@ -719,7 +939,45 @@ int main(int argc, char** argv) {
             .materials = app.asset->getMaterialInstances(),
             .materialCount = app.asset->getMaterialInstanceCount(),
         };
-        app.automationEngine->tick(content, ImGui::GetIO().DeltaTime);
+        //app.automationEngine->tick(content, ImGui::GetIO().DeltaTime);
+       // return;
+        const Viewport& vp = view->getViewport();
+        const size_t byteCount = vp.width * vp.height * 3;
+
+        if (app.screenShotTaken)
+        {
+            //return;
+        }
+
+        app.screenShotTaken = true;
+
+        auto xxx = new XXX();
+        xxx->vp = &vp;
+
+        // Create a buffer descriptor that writes the PPM after the data becomes ready on the CPU.
+        backend::PixelBufferDescriptor buffer(
+            new uint8_t[byteCount], byteCount,
+            backend::PixelBufferDescriptor::PixelDataFormat::RGB,
+            backend::PixelBufferDescriptor::PixelDataType::UBYTE,
+            [](void* buffer, size_t size, void* user) {
+
+                XXX* xxx = (XXX*)user;
+                const Viewport& vp = *xxx->vp;
+                Path out(R"(c:\Users\mj185102\OneDrive - NCR Corporation\Documents\untitled.bmp)");
+                writeImage(out.c_str(), static_cast<unsigned char*>(buffer), vp.width, vp.height);
+                /*std::ofstream ppmStream(out);
+                ppmStream << "P6 " << vp.width << " " << vp.height << " " << 255 << std::endl;
+                ppmStream.write(static_cast<char*>(buffer), vp.width * vp.height * 3);*/
+                delete[] static_cast<uint8_t*>(buffer);
+                FilamentApp::get().close();
+                delete xxx;
+            },
+            xxx
+            );
+
+        // Invoke readPixels asynchronously.
+        renderer->readPixels((uint32_t)vp.left, (uint32_t)vp.bottom, vp.width, vp.height,
+            std::move(buffer));
     };
 
     FilamentApp& filamentApp = FilamentApp::get();
@@ -735,7 +993,7 @@ int main(int argc, char** argv) {
         loadResources(path);
     });
 
-    filamentApp.run(app.config, setup, cleanup, gui, preRender, postRender);
+    filamentApp.run(app.config, setup, cleanup, nullptr, preRender, postRender);
 
     return 0;
 }

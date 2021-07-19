@@ -79,6 +79,7 @@ static constexpr uint16_t QUAD_INDICES[6] = {
 int main(int argc, char** argv) {
     Config config;
     config.title = "texturedquad";
+    config.backend = Engine::Backend::OPENGL;
 
     App app;
     auto setup = [&app](Engine* engine, View* view, Scene* scene) {

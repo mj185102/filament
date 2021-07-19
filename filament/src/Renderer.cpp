@@ -618,7 +618,7 @@ FrameGraphId<FrameGraphTexture> FRenderer::refractionPass(FrameGraph& fg,
                 return (command.key & RenderPass::PASS_MASK) < uint64_t(RenderPass::Pass::REFRACT);
             });
 
-    const bool hasScreenSpaceRefraction =
+    const bool hasScreenSpaceRefraction = refraction != nullptr &&
             (refraction->key & RenderPass::PASS_MASK) == uint64_t(RenderPass::Pass::REFRACT);
 
     if (UTILS_UNLIKELY(hasScreenSpaceRefraction)) {

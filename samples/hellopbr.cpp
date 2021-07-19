@@ -21,6 +21,8 @@
 #include <filament/Scene.h>
 #include <filament/TransformManager.h>
 #include <filament/View.h>
+#include <filament/Renderer.h>
+#include <backend/PixelBufferDescriptor.h>
 
 #include <utils/EntityManager.h>
 
@@ -52,6 +54,7 @@ int main(int argc, char** argv) {
     Config config;
     config.title = "hellopbr";
     config.iblDirectory = FilamentApp::getRootAssetsPath() + IBL_FOLDER;
+    config.backend = Backend::OPENGL;
 
     App app;
     auto setup = [config, &app](Engine* engine, View* view, Scene* scene) {
@@ -100,7 +103,15 @@ int main(int argc, char** argv) {
         tcm.setTransform(ti, app.transform * mat4f::rotation(now, float3{ 0, 1, 0 }));
     });
 
-    FilamentApp::get().run(config, setup, cleanup);
+    auto postRender = [&app](Engine*, View*,
+        Scene*, Renderer* renderer)
+    {
+        filament::backend::PixelBufferDescriptor d;
+        renderer->readPixels(0, 0, 100, 100, std::move(d));
+        FilamentApp::get().close();
+    };
+
+    FilamentApp::get().run(config, setup, cleanup, nullptr, postRender);
 
     return 0;
 }
