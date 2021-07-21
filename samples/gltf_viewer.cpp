@@ -528,11 +528,13 @@ int main(int argc, char** argv) {
         app.viewer->updateRootTransform();
 
 
-        auto entity = app.asset->getFirstEntityByName("Cube");
+        
 
         /*auto ddd = engine->getTransformManager().getInstance(entity);
         auto renderableManagerInstance =  engine->getRenderableManager().getInstance(entity);*/
         //renderableManagerInstance
+
+        auto entity = app.asset->getFirstEntityByName("Cube");
 
         /*engine->getTransformManager().setTransform(engine->getTransformManager().getInstance(entity),
             mat4f(
