@@ -105,10 +105,6 @@ struct FAssetLoader : public AssetLoader {
     bool createAssets(const uint8_t* bytes, uint32_t numBytes, FilamentAsset** assets,
             size_t numAssets);
 
-    ~FAssetLoader() {
-        delete mMaterials;
-    }
-
     void destroyAsset(const FFilamentAsset* asset) {
         delete asset;
     }
@@ -1268,7 +1264,7 @@ AssetLoader* AssetLoader::create(const AssetConfiguration& config) {
 }
 
 void AssetLoader::destroy(AssetLoader** loader) {
-    delete *loader;
+    delete upcast(*loader);
     *loader = nullptr;
 }
 
