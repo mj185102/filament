@@ -114,6 +114,21 @@ void transform(App &app, Engine* engine, const char* entityName, bool upsideDown
                 printf("Scaling %s by %.1f along x, by %.1f along y, and %.1f along z\n", entityName, scaleX, scaleY, scaleZ);
             }
 
+            /*
+            * Twisting doesn't seem to produce any useful effects.  It makes the scene look *less*
+            * like a 3D scene, regardless of where I put it.  Had I paid more attention to linear
+            * algebra at school, I'd have learned why is that.
+            * 
+            float k = 0.4;
+            float l = 0.4;
+            auto twist = mat4f(
+                cos(k), -sin(k), 0.0f, l * sin(k),
+                sin(k), cos(k), 0.0f, l * (1 - cos(k)),
+                0.0f, 0.0f, 1.0f, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+            );
+            */
+
             auto instance = engine->getTransformManager().getInstance(entity);
             engine->getTransformManager().setTransform(instance, rotX * rotY * rotZ * scaling * engine->getTransformManager().getTransform(instance) * translation);
 
