@@ -192,6 +192,8 @@ struct App {
     AutomationEngine* automationEngine = nullptr;
 };
 
+#include "gltf_remodel.cpp"
+
 static const char* DEFAULT_IBL = "default_env";
 
 static void printUsage(char* name) {
@@ -444,8 +446,13 @@ int main(int argc, char** argv) {
 
     //int optionIndex = handleCommandLineArguments(argc, argv, &app);
 
-    utils::Path filename = R"(c:\Users\mj185102\OneDrive - NCR Corporation\Documents\untitled.glb)";
-    /*int num_args = argc - optionIndex;
+    utils::Path filename = R"(c:\dev\filament\samples\scenes\DemoScene1.glb)";
+
+    if (argc >= 2) {
+        feed_to_scene_generator(argv[1]);
+    }
+
+    /* int num_args = argc - optionIndex;
     if (num_args >= 1) {
         filename = argv[optionIndex];
         if (!filename.exists()) {
@@ -522,28 +529,7 @@ int main(int argc, char** argv) {
     };
 
     auto animate = [&app](Engine* engine, View* view, double now) {
-        //app.resourceLoader->asyncUpdateLoad();
-
-        // Optionally fit the model into a unit cube at the origin.
-        app.viewer->updateRootTransform();
-
-
-        
-
-        /*auto ddd = engine->getTransformManager().getInstance(entity);
-        auto renderableManagerInstance =  engine->getRenderableManager().getInstance(entity);*/
-        //renderableManagerInstance
-
-        auto entity = app.asset->getFirstEntityByName("Cube");
-
-        /*engine->getTransformManager().setTransform(engine->getTransformManager().getInstance(entity),
-            mat4f(
-                1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, 0.0f,
-                0.0f, -1.2f, 0.0f, 1.0f
-            ));*/
-        
+        adjust_scene(app, engine, view, now);
         // 
         //engine->getTransformManager().getChildren(engine->getTransformManager().getInstance(), &entity, 1);
         // Add renderables to the scene as they become ready.
@@ -890,6 +876,7 @@ int main(int argc, char** argv) {
         // This applies clear options, the skybox mask, and some camera settings.
         Camera& camera = view->getCamera();
         Skybox* skybox = scene->getSkybox();
+
         applySettings(app.viewer->getSettings().viewer, &camera, skybox, renderer);
 
         // Check if color grading has changed.
@@ -965,7 +952,7 @@ int main(int argc, char** argv) {
 
                 XXX* xxx = (XXX*)user;
                 const Viewport& vp = *xxx->vp;
-                Path out(R"(c:\Users\mj185102\OneDrive - NCR Corporation\Documents\untitled.bmp)");
+                Path out(R"(c:\dev\filament\samples\scenes\DemoScene1.bmp)");
                 writeImage(out.c_str(), static_cast<unsigned char*>(buffer), vp.width, vp.height);
                 /*std::ofstream ppmStream(out);
                 ppmStream << "P6 " << vp.width << " " << vp.height << " " << 255 << std::endl;
