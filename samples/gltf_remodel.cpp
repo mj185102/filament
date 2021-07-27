@@ -28,7 +28,7 @@ void transform(App &app, Engine* engine, const char* entityName, bool upsideDown
         engine->getTransformManager().setTransform(engine->getTransformManager().getInstance(entity), away);
         printf("Hiding %s\n", entityName);
     } else {
-        /* Shift along every coordinate */
+        /* Translate (slide) along every coordinate */
         int x, y, z;
 
         const float translationOffsetsX[] = { -4, -2, 0, 2, 5 };    // from left to right
@@ -39,20 +39,20 @@ void transform(App &app, Engine* engine, const char* entityName, bool upsideDown
         y = (y / 5) % 5;
         z = (z / 25) % 4;
 
-        // suppress shifts: x = y = z = 2;
+        // suppress translations: x = y = z = 2;
 
-        auto shift = mat4f(
+        auto translation = mat4f(
             1.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 1.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 1.0f, 0.0f,
             translationOffsetsX[x], translationOffsetsY[y], translationOffsetsZ[z], 1.0f
         );
 
-        printf("Shifting %s by x=%d, y=%d, z=%d\n", entityName, x, y, z);
-        /* ...but the actual shifting gets done only later.  We need to rotate first, then shift, or we'd rotate around the origin - out of the viewable area.  */
+        printf("Sliding %s by x=%d, y=%d, z=%d\n", entityName, x, y, z);
+        /* ...but the actual translating gets done only later.  We need to rotate and scale first, then translate, or we'd rotate around the origin - often moving out of the viewable area.  */
 
 
-        /* Rotate around every coordinate*/
+        /* Rotate around every coordinate */
 
         float tilt[] = { -0.5, 0, 0, +0.5 };
         float turnAround[] = { -3, -1.6, -1, -0.6, 0, 0.6, 1, 1.6 };
@@ -85,9 +85,39 @@ void transform(App &app, Engine* engine, const char* entityName, bool upsideDown
         auto rotX = mat4f::rotation(rotationOffsetsX[x], float3(1, 0, 0));
         auto rotY = mat4f::rotation(rotationOffsetsY[y], float3(0, 1, 0));
         auto rotZ = mat4f::rotation(rotationOffsetsZ[z], float3(0, 0, 1));
-        auto instance = engine->getTransformManager().getInstance(entity);
-        engine->getTransformManager().setTransform(instance, rotX * rotY * rotZ * engine->getTransformManager().getTransform(instance) * shift);
         printf("Rotating %s by %.1f rad around x, %.1f rad around y, %.1f rad around z\n", entityName, rotationOffsetsX[x], rotationOffsetsY[y], rotationOffsetsZ[z]);
+
+        const bool ofCourse = true;
+        const bool scalingAllowed = ofCourse;
+
+        if (scalingAllowed) {
+            const float scalingFactorsX[] = { 0.8, 1, 1, 1.3 };    // thin to fat
+            const float scalingFactorsY[] = { 0.8, 1, 1, 1.3 };    // plump to tall
+            const float scalingFactorsZ[] = { 0.9, 1, 1, 1.1 };    // I doubt that this is well visible
+            x = y = z = nextNumber();
+            x %= 4;
+            y = (y / 4) % 4;
+            z = (z / 16) % 4;
+
+            auto scaleX = scalingFactorsX[x];
+            auto scaleY = scalingFactorsY[y];
+            auto scaleZ = scalingFactorsZ[z];
+
+            auto scaling = mat4f(
+                scaleX, 0.0f, 0.0f, 0.0f,
+                0.0f, scaleY, 0.0f, 0.0f,
+                0.0f, 0.0f, scaleZ, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+            );
+
+            if (scaleX != 1 || scaleY != 1 || scaleZ != 1) {
+                printf("Scaling %s by %.1f along x, by %.1f along y, and %.1f along z\n", entityName, scaleX, scaleY, scaleZ);
+            }
+
+            auto instance = engine->getTransformManager().getInstance(entity);
+            engine->getTransformManager().setTransform(instance, rotX * rotY * rotZ * scaling * engine->getTransformManager().getTransform(instance) * translation);
+
+        }
     }
 }
 
