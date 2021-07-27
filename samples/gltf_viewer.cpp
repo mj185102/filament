@@ -446,6 +446,7 @@ int main(int argc, char** argv) {
 
     //int optionIndex = handleCommandLineArguments(argc, argv, &app);
 
+    //utils::Path filename = R"(c:\Users\mj185102\OneDrive - NCR Corporation\Documents\untitled.glb)";
     utils::Path filename = R"(c:\dev\filament\samples\scenes\DemoScene1.glb)";
 
     if (argc >= 2) {
@@ -609,6 +610,21 @@ int main(int argc, char** argv) {
                 createMaterialGenerator(engine) : createUbershaderLoader(engine);
         app.assetLoader = AssetLoader::create({engine, app.materials, app.names });
         app.mainCamera = &view->getCamera();
+
+        /*myCamera->setProjection(45, 16.0 / 9.0, 0.1, 1.0);
+        *myCamera->lookAt({ 0, 1.60, 1 }, { 0, 0, 0 });*/
+
+        
+
+
+        /*engine->getTransformManager().setTransform(engine->getTransformManager().getInstance(entity),
+            mat4f(
+                1.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                0.0f, -1.2f, 0.0f, 1.0f
+            ));*/
+
         /*if (filename.isEmpty()) {
             app.asset = app.assetLoader->createAssetFromBinary(
                     GLTF_VIEWER_DAMAGEDHELMET_DATA,
@@ -620,94 +636,6 @@ int main(int argc, char** argv) {
         loadResources(filename);
 
         createGroundPlane(engine, scene, app);
-
-        //app.viewer->setUiCallback([&app, scene, view, engine] () {
-        //    auto& automation = *app.automationEngine;
-
-        //    float progress = app.resourceLoader->asyncGetLoadProgress();
-        //    if (progress < 1.0) {
-        //        ImGui::ProgressBar(progress);
-        //    } else {
-        //        // The model is now fully loaded, so let automation know.
-        //        automation.signalBatchMode();
-        //    }
-
-        //    // The screenshots do not include the UI, but we auto-open the Automation UI group
-        //    // when in batch mode. This is useful when a human is observing progress.
-        //    const int flags = automation.isBatchModeEnabled() ? ImGuiTreeNodeFlags_DefaultOpen : 0;
-
-        //    if (ImGui::CollapsingHeader("Automation", flags)) {
-        //        ImGui::Indent();
-
-        //        const ImVec4 yellow(1.0f,1.0f,0.0f,1.0f);
-        //        if (automation.isRunning()) {
-        //            ImGui::TextColored(yellow, "Test case %zu / %zu",
-        //                    automation.currentTest(), automation.testCount());
-        //        } else {
-        //            ImGui::TextColored(yellow, "%zu test cases", automation.testCount());
-        //        }
-
-        //        auto options = automation.getOptions();
-
-        //        ImGui::PushItemWidth(150);
-        //        ImGui::SliderFloat("Sleep (seconds)", &options.sleepDuration, 0.0, 5.0);
-        //        ImGui::PopItemWidth();
-
-        //        // Hide the tooltip during automation to avoid photobombing the screenshot.
-        //        if (ImGui::IsItemHovered() && !automation.isRunning()) {
-        //            ImGui::SetTooltip("Specifies the amount of time to sleep between test cases.");
-        //        }
-
-        //        ImGui::Checkbox("Export screenshot for each test", &options.exportScreenshots);
-        //        ImGui::Checkbox("Export settings JSON for each test", &options.exportSettings);
-
-        //        automation.setOptions(options);
-
-        //        if (automation.isRunning()) {
-        //            if (ImGui::Button("Stop batch test")) {
-        //                automation.stopRunning();
-        //            }
-        //        } else if (ImGui::Button("Run batch test")) {
-        //            automation.startRunning();
-        //        }
-
-        //        if (ImGui::Button("Export view settings")) {
-        //            automation.exportSettings(app.viewer->getSettings(), "settings.json");
-        //            app.messageBoxText = automation.getStatusMessage();
-        //            ImGui::OpenPopup("MessageBox");
-        //        }
-        //        ImGui::Unindent();
-        //    }
-
-        //    if (ImGui::CollapsingHeader("Stats")) {
-        //        ImGui::Indent();
-        //        ImGui::Text("%zu entities in the asset", app.asset->getEntityCount());
-        //        ImGui::Text("%zu renderables (excluding UI)", scene->getRenderableCount());
-        //        ImGui::Text("%zu skipped frames", FilamentApp::get().getSkippedFrameCount());
-        //        ImGui::Unindent();
-        //    }
-
-        //    if (ImGui::CollapsingHeader("Debug")) {
-        //        if (ImGui::Button("Capture frame")) {
-        //            auto& debug = engine->getDebugRegistry();
-        //            bool* captureFrame =
-        //                debug.getPropertyAddress<bool>("d.renderer.doFrameCapture");
-        //            *captureFrame = true;
-        //        }
-        //        ImGui::SliderFloat("scale", &sGlobalScale, 0.25f, 1.0f);
-        //        ImGui::SliderFloat("anamorphism", &sGlobalScaleAnamorphism, -1.0f, 1.0f);
-        //    }
-
-        //    if (ImGui::BeginPopupModal("MessageBox", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-        //        ImGui::Text("%s", app.messageBoxText.c_str());
-        //        if (ImGui::Button("OK", ImVec2(120, 0))) {
-        //            ImGui::CloseCurrentPopup();
-        //        }
-        //        ImGui::EndPopup();
-        //    }
-        //});
-
-        //resize(engine, view);
 
         auto& tm = engine->getTransformManager();
         auto& rm = engine->getRenderableManager();
@@ -846,8 +774,8 @@ int main(int argc, char** argv) {
         auto instance = rcm.getInstance(app.scene.groundPlane);
         //const auto viewerOptions = app.automationEngine->getViewerOptions();
         const auto& dofOptions = app.viewer->getSettings().view.dof;
-        //rcm.setLayerMask(instance,
-        //        0xff, viewerOptions.groundPlaneEnabled ? 0xff : 0x00);
+        rcm.setLayerMask(instance,
+                0xff, 0xff);
 
         // Note that this focal length might be different from the slider value because the
         // automation engine applies Camera::computeEffectiveFocalLength when DoF is enabled.
@@ -867,6 +795,7 @@ int main(int argc, char** argv) {
             // camera to the viewport.
             const Viewport& vp = view->getViewport();
             double aspectRatio = (double) vp.width / vp.height;
+            auto gggsfd = camera->getScaling();
             camera->setScaling({1.0 / aspectRatio, 1.0});
         }
 
@@ -877,7 +806,29 @@ int main(int argc, char** argv) {
         Camera& camera = view->getCamera();
         Skybox* skybox = scene->getSkybox();
 
+        auto cameraEntity = app.asset->getFirstEntityByName("Camera");
+
+        mat4f gltfCameraTransform = engine->getTransformManager().getWorldTransform(engine->getTransformManager().getInstance(cameraEntity));
+
+        // Camera looks down by default, we need to rotate it
+        auto rotX2 = mat4f::rotation(-F_PI_2, float3{ 1, 0, 0 });
+        gltfCameraTransform *= rotX2;
+
+        camera.setModelMatrix(gltfCameraTransform);
+
+        const utils::Entity* cameras = app.asset->getCameraEntities();
+        //Camera* camerap = engine->getCameraComponent(cameras[currentCamera - 1]);
+
         applySettings(app.viewer->getSettings().viewer, &camera, skybox, renderer);
+
+        auto a = camera.getPosition();
+        auto b = camera.getForwardVector();
+        auto c = camera.getFieldOfViewInDegrees(Camera::Fov::VERTICAL);
+
+        const Viewport& vp = view->getViewport();
+        double aspectRatio = (double)vp.width / vp.height;
+        auto gggsfd = camera.getScaling();
+        camera.setScaling({ 1, 1 });
 
         // Check if color grading has changed.
         ColorGradingSettings& options = app.viewer->getSettings().view.colorGrading;
