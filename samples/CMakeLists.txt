@@ -106,6 +106,9 @@ function(add_envmap SOURCE TARGET)
 endfunction()
 
 add_envmap("third_party/environments/lightroom_14b.hdr" "default_env")
+add_envmap("third_party/environments/round_platform_2k.hdr" "round_platform_env")
+add_envmap("third_party/environments/syferfontein_18d_clear_2k.hdr" "syferfontein_18d_clear_env")
+add_envmap("third_party/environments/studio_small_02_2k.hdr" "studio_small_02_2k_env")
 
 # ==================================================================================================
 # Build suzanne resources
@@ -180,6 +183,7 @@ set(GLTF_VIEWER_RESOURCE_FILES
     ${ROOT_DIR}/third_party/models/DamagedHelmet/DamagedHelmet.glb
     ${MATERIAL_DIR}/groundShadow.filamat
     ${MATERIAL_DIR}/aiDefaultMat.filamat
+    ${MATERIAL_DIR}/bakedTexture.filamat
 )
 
 get_resgen_vars(${RESOURCE_DIR} gltf_viewer)

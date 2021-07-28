@@ -57,6 +57,7 @@
 #include <string>
 
 #include "generated/resources/gltf_viewer.h"
+#include <stb_image.h>
 
 using namespace filament;
 using namespace filament::math;
@@ -159,6 +160,8 @@ struct App {
     SimpleViewer* viewer;
     Config config;
     Camera* mainCamera;
+    Texture* groundTexture;
+    MaterialInstance* groundMaterialInstance;
 
     AssetLoader* assetLoader;
     FilamentAsset* asset = nullptr;
@@ -194,7 +197,7 @@ struct App {
 
 #include "gltf_remodel.cpp"
 
-static const char* DEFAULT_IBL = "default_env";
+static const char* DEFAULT_IBL = "round_platform_env";
 
 static void printUsage(char* name) {
     std::string exec_name(Path(name).getName());
@@ -339,14 +342,48 @@ static bool loadSettings(const char* filename, Settings* out) {
     JsonSerializer serializer;
     return serializer.readJson(json.data(), contentSize, out);
 }
-
+using MinFilter = TextureSampler::MinFilter;
+using MagFilter = TextureSampler::MagFilter;
 static void createGroundPlane(Engine* engine, Scene* scene, App& app) {
+    Path path = FilamentApp::getRootAssetsPath() + "textures/Parquet_flooring_05/Parquet_flooring_05_Color.png";
+    if (!path.exists()) {
+        std::cerr << "The texture " << path << " does not exist" << std::endl;
+        exit(1);
+    }
+    int w, h, n;
+    unsigned char* data = stbi_load(path.c_str(), &w, &h, &n, 4);
+    if (data == nullptr) {
+        std::cerr << "The texture " << path << " could not be loaded" << std::endl;
+        exit(1);
+    }
+    std::cout << "Loaded texture: " << w << "x" << h << std::endl;
+    Texture::PixelBufferDescriptor buffer(data, size_t(w * h * 4),
+        Texture::Format::RGBA, Texture::Type::UBYTE,
+        (Texture::PixelBufferDescriptor::Callback)&stbi_image_free);
+    app.groundTexture = Texture::Builder()
+        .width(uint32_t(w))
+        .height(uint32_t(h))
+        .levels(1)
+        .sampler(Texture::Sampler::SAMPLER_2D)
+        .format(Texture::InternalFormat::RGBA8)
+        .build(*engine);
+    app.groundTexture->setImage(*engine, 0, std::move(buffer));
+    TextureSampler sampler(MinFilter::LINEAR, MagFilter::LINEAR);
+
     auto& em = EntityManager::get();
+
     Material* shadowMaterial = Material::Builder()
+        .package(GLTF_VIEWER_BAKEDTEXTURE_DATA, GLTF_VIEWER_BAKEDTEXTURE_SIZE)
+        .build(*engine);
+    app.groundMaterialInstance = shadowMaterial->createInstance();
+    app.groundMaterialInstance->setParameter("albedo", app.groundTexture, sampler);
+    
+    
+    /*Material* shadowMaterial = Material::Builder()
             .package(GLTF_VIEWER_GROUNDSHADOW_DATA, GLTF_VIEWER_GROUNDSHADOW_SIZE)
             .build(*engine);
     auto& viewerOptions = app.viewer->getSettings().viewer;
-    shadowMaterial->setDefaultParameter("strength", viewerOptions.groundShadowStrength);
+    shadowMaterial->setDefaultParameter("strength", viewerOptions.groundShadowStrength);*/
 
     const static uint32_t indices[] = {
             0, 1, 2, 2, 3, 0
@@ -367,6 +404,13 @@ static void createGroundPlane(Engine* engine, Scene* scene, App& app) {
             {  planeExtent.x, 0, -planeExtent.z },
     };
 
+    const static float2 uv[] = {
+            { 0, 0 },
+            { 0, 1 },
+            {  1, 1 },
+            {  1, 0 },
+    };
+
     short4 tbn = packSnorm16(
             mat3f::packTangentFrame(
                     mat3f{
@@ -380,11 +424,12 @@ static void createGroundPlane(Engine* engine, Scene* scene, App& app) {
 
     VertexBuffer* vertexBuffer = VertexBuffer::Builder()
             .vertexCount(4)
-            .bufferCount(2)
+            .bufferCount(3)
             .attribute(VertexAttribute::POSITION,
                     0, VertexBuffer::AttributeType::FLOAT3)
             .attribute(VertexAttribute::TANGENTS,
                     1, VertexBuffer::AttributeType::SHORT4)
+            .attribute(VertexAttribute::UV0, 2, VertexBuffer::AttributeType::FLOAT2)
             .normalized(VertexAttribute::TANGENTS)
             .build(*engine);
 
@@ -392,6 +437,8 @@ static void createGroundPlane(Engine* engine, Scene* scene, App& app) {
             vertices, vertexBuffer->getVertexCount() * sizeof(vertices[0])));
     vertexBuffer->setBufferAt(*engine, 1, VertexBuffer::BufferDescriptor(
             normals, vertexBuffer->getVertexCount() * sizeof(normals[0])));
+    vertexBuffer->setBufferAt(*engine, 2, VertexBuffer::BufferDescriptor(
+            uv, vertexBuffer->getVertexCount() * sizeof(uv[0])));
 
     IndexBuffer* indexBuffer = IndexBuffer::Builder()
             .indexCount(6)
@@ -405,7 +452,7 @@ static void createGroundPlane(Engine* engine, Scene* scene, App& app) {
             .boundingBox({
                     {}, { planeExtent.x, 1e-4f, planeExtent.z }
             })
-            .material(0, shadowMaterial->getDefaultInstance())
+            .material(0, app.groundMaterialInstance)
             .geometry(0, RenderableManager::PrimitiveType::TRIANGLES,
                     vertexBuffer, indexBuffer, 0, 6)
             .culling(false)
@@ -447,7 +494,8 @@ int main(int argc, char** argv) {
     //int optionIndex = handleCommandLineArguments(argc, argv, &app);
 
     //utils::Path filename = R"(c:\Users\mj185102\OneDrive - NCR Corporation\Documents\untitled.glb)";
-    utils::Path filename = R"(c:\dev\filament\samples\scenes\DemoScene1.glb)";
+    //utils::Path filename = R"(c:\dev\filament\samples\scenes\DemoScene1.glb)";
+    utils::Path filename = R"(c:\Dev\public\filament\samples\scenes\DemoScene1.glb)";
 
     if (argc >= 2) {
         feed_to_scene_generator(argv[1]);
@@ -530,7 +578,7 @@ int main(int argc, char** argv) {
     };
 
     auto animate = [&app](Engine* engine, View* view, double now) {
-        adjust_scene(app, engine, view, now);
+        //adjust_scene(app, engine, view, now);
         // 
         //engine->getTransformManager().getChildren(engine->getTransformManager().getInstance(), &entity, 1);
         // Add renderables to the scene as they become ready.
@@ -568,51 +616,11 @@ int main(int argc, char** argv) {
 
         app.automationEngine = new AutomationEngine(app.automationSpec, &app.viewer->getSettings());
 
-        /*if (batchMode) {
-            app.automationEngine->startBatchMode();
-            auto options = app.automationEngine->getOptions();
-            options.sleepDuration = 0.0;
-            options.exportScreenshots = true;
-            options.exportSettings = true;
-            app.automationEngine->setOptions(options);
-            app.viewer->stopAnimation();
-        }
-
-        if (app.settingsFile.size() > 0) {
-            bool success = loadSettings(app.settingsFile.c_str(), &app.viewer->getSettings());
-            if (success) {
-                std::cout << "Loaded settings from " << app.settingsFile << std::endl;
-            } else {
-                std::cerr << "Failed to load settings from " << app.settingsFile << std::endl;
-            }
-        }*/
-
         app.materials = (app.materialSource == GENERATE_SHADERS) ?
             createMaterialGenerator(engine) : createUbershaderLoader(engine);
         app.assetLoader = AssetLoader::create({ engine, app.materials, app.names });
         app.mainCamera = &view->getCamera();
 
-        /*myCamera->setProjection(45, 16.0 / 9.0, 0.1, 1.0);
-        *myCamera->lookAt({ 0, 1.60, 1 }, { 0, 0, 0 });*/
-
-
-
-
-        /*engine->getTransformManager().setTransform(engine->getTransformManager().getInstance(entity),
-            mat4f(
-                1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 1.0f, 0.0f,
-                0.0f, -1.2f, 0.0f, 1.0f
-            ));*/
-
-            /*if (filename.isEmpty()) {
-                app.asset = app.assetLoader->createAssetFromBinary(
-                        GLTF_VIEWER_DAMAGEDHELMET_DATA,
-                        GLTF_VIEWER_DAMAGEDHELMET_SIZE);
-            } else {
-                loadAsset(filename);
-            }*/
         loadAsset(filename); // + added
         loadResources(filename);
 
@@ -774,11 +782,13 @@ int main(int argc, char** argv) {
         app.assetLoader->destroyAsset(app.asset);
         app.materials->destroyMaterials();
 
+        engine->destroy(app.groundMaterialInstance);
         engine->destroy(app.scene.groundPlane);
         engine->destroy(app.scene.groundVertexBuffer);
         engine->destroy(app.scene.groundIndexBuffer);
-        engine->destroy(app.scene.groundMaterial);
         engine->destroy(app.colorGrading);
+        engine->destroy(app.groundTexture);
+        engine->destroy(app.scene.groundMaterial);
 
         delete app.viewer;
         delete app.materials;
@@ -918,7 +928,7 @@ int main(int argc, char** argv) {
 
                 XXX* xxx = (XXX*)user;
                 const Viewport& vp = *xxx->vp;
-                Path out(R"(c:\dev\filament\samples\scenes\DemoScene1.bmp)");
+                Path out(R"(c:\dev\public\filament\samples\scenes\DemoScene1.bmp)");
                 writeImage(out.c_str(), static_cast<unsigned char*>(buffer), vp.width, vp.height);
                 /*std::ofstream ppmStream(out);
                 ppmStream << "P6 " << vp.width << " " << vp.height << " " << 255 << std::endl;
