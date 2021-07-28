@@ -45,7 +45,7 @@ void transform(App &app, Engine* engine, const char* entityName, bool upsideDown
             1.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 1.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 1.0f, 0.0f,
-            translationOffsetsX[x], translationOffsetsY[y], translationOffsetsZ[z], 1.0f
+            translationOffsetsX[x], 0, translationOffsetsZ[z], 1.0f
         );
 
         printf("Sliding %s by x=%d, y=%d, z=%d\n", entityName, x, y, z);
@@ -130,7 +130,7 @@ void transform(App &app, Engine* engine, const char* entityName, bool upsideDown
             */
 
             auto instance = engine->getTransformManager().getInstance(entity);
-            engine->getTransformManager().setTransform(instance, rotX * rotY * rotZ * scaling * engine->getTransformManager().getTransform(instance) * translation);
+            engine->getTransformManager().setTransform(instance, /*rotX * rotY * rotZ **/ scaling * engine->getTransformManager().getTransform(instance) * translation);
 
         }
     }
@@ -178,5 +178,9 @@ void adjust_scene(App &app, Engine* engine, View* view, double now) {
     transform(app, engine, "Spaceship", false);
     transform(app, engine, "Sword", true);
     transform(app, engine, "Tree", false);
+    transform(app, engine, "DogHouse", false);
+    transform(app, engine, "Barrel", false);
+    transform(app, engine, "Bucket", false);
+    transform(app, engine, "Creeper", false);
 }
 

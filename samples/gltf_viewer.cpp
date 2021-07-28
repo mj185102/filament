@@ -155,6 +155,7 @@ void writeImage(const char* filename, unsigned char* data, int w, int h)
 
 
 struct App {
+    std::string output;
     bool screenShotTaken = false;
     Engine* engine;
     SimpleViewer* viewer;
@@ -345,7 +346,13 @@ static bool loadSettings(const char* filename, Settings* out) {
 using MinFilter = TextureSampler::MinFilter;
 using MagFilter = TextureSampler::MagFilter;
 static void createGroundPlane(Engine* engine, Scene* scene, App& app) {
-    Path path = FilamentApp::getRootAssetsPath() + "textures/Parquet_flooring_05/Parquet_flooring_05_Color.png";
+
+    auto number = nextNumber();
+
+    int textureIndex = number % 2;
+
+    Path path = FilamentApp::getRootAssetsPath() + (textureIndex == 0 ? "textures/Parquet_flooring_05/Parquet_flooring_05_Color.png"
+        : "textures/Sandy_gravel_01/Sandy_gravel_01_Color.png");
     if (!path.exists()) {
         std::cerr << "The texture " << path << " does not exist" << std::endl;
         exit(1);
@@ -495,11 +502,18 @@ int main(int argc, char** argv) {
 
     //utils::Path filename = R"(c:\Users\mj185102\OneDrive - NCR Corporation\Documents\untitled.glb)";
     //utils::Path filename = R"(c:\dev\filament\samples\scenes\DemoScene1.glb)";
-    utils::Path filename = R"(c:\Dev\public\filament\samples\scenes\DemoScene1.glb)";
+    //utils::Path filename = R"(c:\Dev\public\filament\samples\scenes\DemoScene1.glb)";
 
-    if (argc >= 2) {
-        feed_to_scene_generator(argv[1]);
+    if (argc != 4) {
+
+        std::cerr << "Invalid arguments, expected: thumbprint input output" << std::endl;
+        exit(1);
+        return -1;
     }
+
+    feed_to_scene_generator(argv[1]);
+    utils::Path filename = argv[2];
+    app.output = argv[3];
 
     /* int num_args = argc - optionIndex;
     if (num_args >= 1) {
@@ -578,7 +592,7 @@ int main(int argc, char** argv) {
     };
 
     auto animate = [&app](Engine* engine, View* view, double now) {
-        //adjust_scene(app, engine, view, now);
+        adjust_scene(app, engine, view, now);
         // 
         //engine->getTransformManager().getChildren(engine->getTransformManager().getInstance(), &entity, 1);
         // Add renderables to the scene as they become ready.
@@ -891,6 +905,7 @@ int main(int argc, char** argv) {
     struct XXX
     {
         const Viewport* vp;
+        std::string output;
     };
 
     auto postRender = [&app](Engine* engine, View* view, Scene* scene, Renderer* renderer) {
@@ -918,6 +933,7 @@ int main(int argc, char** argv) {
 
         auto xxx = new XXX();
         xxx->vp = &vp;
+        xxx->output = app.output;
 
         // Create a buffer descriptor that writes the PPM after the data becomes ready on the CPU.
         backend::PixelBufferDescriptor buffer(
@@ -928,8 +944,7 @@ int main(int argc, char** argv) {
 
                 XXX* xxx = (XXX*)user;
                 const Viewport& vp = *xxx->vp;
-                Path out(R"(c:\dev\public\filament\samples\scenes\DemoScene1.bmp)");
-                writeImage(out.c_str(), static_cast<unsigned char*>(buffer), vp.width, vp.height);
+                writeImage(xxx->output.c_str(), static_cast<unsigned char*>(buffer), vp.width, vp.height);
                 /*std::ofstream ppmStream(out);
                 ppmStream << "P6 " << vp.width << " " << vp.height << " " << 255 << std::endl;
                 ppmStream.write(static_cast<char*>(buffer), vp.width * vp.height * 3);*/
