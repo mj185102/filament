@@ -178,7 +178,7 @@ void adjust_scene(App &app, Engine* engine, View* view, double now) {
     transform(app, engine, "Spaceship", false);
     transform(app, engine, "Sword", true);
     transform(app, engine, "Tree", false);
-    transform(app, engine, "DogHouse", false);
+    transform(app, engine, "Plant", false);
     transform(app, engine, "Barrel", false);
     transform(app, engine, "Bucket", false);
     transform(app, engine, "Creeper", false);
