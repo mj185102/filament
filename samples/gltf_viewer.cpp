@@ -556,29 +556,10 @@ int main(int argc, char** argv) {
         app.names = new NameComponentManager(EntityManager::get());
         app.viewer = new SimpleViewer(engine, scene, view, 410);
         app.viewer->getSettings().viewer.autoScaleEnabled = !app.actualSize;
-        
+
         //view->setScreenSpaceRefractionEnabled(false);
         //view->setViewport(Viewport)
         const bool batchMode = !app.batchFile.empty();
-
-        // First check if a custom automation spec has been provided. If it fails to load, the app
-        // must be closed since it could be invoked from a script.
-        /*if (batchMode && app.batchFile != "default") {
-            auto size = getFileSize(app.batchFile.c_str());
-            if (size > 0) {
-                std::ifstream in(app.batchFile, std::ifstream::binary | std::ifstream::in);
-                std::vector<char> json(static_cast<unsigned long>(size));
-                in.read(json.data(), size);
-                app.automationSpec = AutomationSpec::generate(json.data(), size);
-                if (!app.automationSpec) {
-                    std::cerr << "Unable to parse automation spec: " << app.batchFile << std::endl;
-                    exit(1);
-                }
-            } else {
-                std::cerr << "Unable to load automation spec: " << app.batchFile << std::endl;
-                exit(1);
-            }
-        }*/
 
         // If no custom spec has been provided, or if in interactive mode, load the default spec.
         if (!app.automationSpec) {
@@ -607,14 +588,14 @@ int main(int argc, char** argv) {
         }*/
 
         app.materials = (app.materialSource == GENERATE_SHADERS) ?
-                createMaterialGenerator(engine) : createUbershaderLoader(engine);
-        app.assetLoader = AssetLoader::create({engine, app.materials, app.names });
+            createMaterialGenerator(engine) : createUbershaderLoader(engine);
+        app.assetLoader = AssetLoader::create({ engine, app.materials, app.names });
         app.mainCamera = &view->getCamera();
 
         /*myCamera->setProjection(45, 16.0 / 9.0, 0.1, 1.0);
         *myCamera->lookAt({ 0, 1.60, 1 }, { 0, 0, 0 });*/
 
-        
+
 
 
         /*engine->getTransformManager().setTransform(engine->getTransformManager().getInstance(entity),
@@ -625,13 +606,13 @@ int main(int argc, char** argv) {
                 0.0f, -1.2f, 0.0f, 1.0f
             ));*/
 
-        /*if (filename.isEmpty()) {
-            app.asset = app.assetLoader->createAssetFromBinary(
-                    GLTF_VIEWER_DAMAGEDHELMET_DATA,
-                    GLTF_VIEWER_DAMAGEDHELMET_SIZE);
-        } else {
-            loadAsset(filename);
-        }*/
+            /*if (filename.isEmpty()) {
+                app.asset = app.assetLoader->createAssetFromBinary(
+                        GLTF_VIEWER_DAMAGEDHELMET_DATA,
+                        GLTF_VIEWER_DAMAGEDHELMET_SIZE);
+            } else {
+                loadAsset(filename);
+            }*/
         loadAsset(filename); // + added
         loadResources(filename);
 
@@ -650,7 +631,7 @@ int main(int argc, char** argv) {
             rm.setCastShadows(instance, scaster);
         };
 
-        auto lightTreeItem = [ &lm](utils::Entity entity) {
+        auto lightTreeItem = [&lm](utils::Entity entity) {
             auto instance = lm.getInstance(entity);
             bool lcaster = lm.isShadowCaster(instance);
             lm.setShadowCaster(instance, lcaster);
@@ -677,7 +658,55 @@ int main(int argc, char** argv) {
             }
         };
 
+        // -------------------
+        // Override material
+        // -------------------
 
+        /*auto entity = app.asset->getFirstEntityByName("Guitar");
+
+        auto mDefaultColorMaterial = Material::Builder()
+            .package(GLTF_VIEWER_AIDEFAULTMAT_DATA, GLTF_VIEWER_AIDEFAULTMAT_SIZE)
+            .build(*engine);
+
+        mDefaultColorMaterial->setDefaultParameter("baseColor", RgbType::sRGB, float3{ 0.0, 0.5, 1 });
+        mDefaultColorMaterial->setDefaultParameter("metallic", 2.4f);
+        mDefaultColorMaterial->setDefaultParameter("roughness", 2.8f);
+        mDefaultColorMaterial->setDefaultParameter("reflectance", 0.8f);
+
+        engine->getRenderableManager().setMaterialInstanceAt(engine->getRenderableManager().getInstance(entity), 0, mDefaultColorMaterial->getDefaultInstance());*/
+        // ------------------------
+
+
+        // -------------------
+        // Set sun from gltf
+        // -------------------
+        /*auto sunEntity = app.asset->getFirstEntityByName("Sun");
+
+        mat4f gltfSunTransform = engine->getTransformManager().getWorldTransform(engine->getTransformManager().getInstance(sunEntity));
+
+        gltfSunTransform[3] = {};
+
+        auto rotX2 = mat4f::rotation(-F_PI_2, float3{ 1, 0, 0 });
+
+        auto pointing = mat4f::translation(float3{ 0,0,1 });
+        pointing *= gltfSunTransform * rotX2;
+
+        auto lightCount = scene->getLightCount();
+        
+        float3 direction = { pointing[0].z, pointing[1].z, -pointing[2].z };
+
+
+        size_t lightComponents = engine->getLightManager().getComponentCount();
+        for (int i = 0; i < lightComponents; ++i)
+        {
+            const auto& lightEntity = engine->getLightManager().getEntities()[i];
+            auto instance = engine->getLightManager().getInstance(lightEntity);
+            
+            auto type = engine->getLightManager().getType(instance);
+            engine->getLightManager().setDirection(instance, direction);
+
+        }*/
+        // ------------------------
 
         treeNode(app.asset->getRoot());
 
@@ -784,20 +813,6 @@ int main(int argc, char** argv) {
         const size_t cameraCount = app.asset->getCameraEntityCount();
         view->setCamera(app.mainCamera);
 
-        const int currentCamera = app.viewer->getCurrentCamera();
-        if (currentCamera > 0 && currentCamera <= cameraCount) {
-            const utils::Entity* cameras = app.asset->getCameraEntities();
-            Camera* camera = engine->getCameraComponent(cameras[currentCamera - 1]);
-            assert_invariant(camera);
-            view->setCamera(camera);
-
-            // Override the aspect ratio in the glTF file and adjust the aspect ratio of this
-            // camera to the viewport.
-            const Viewport& vp = view->getViewport();
-            double aspectRatio = (double) vp.width / vp.height;
-            auto gggsfd = camera->getScaling();
-            camera->setScaling({1.0 / aspectRatio, 1.0});
-        }
 
         //app.scene.groundMaterial->setDefaultParameter(
         //        "strength", viewerOptions.groundShadowStrength);
