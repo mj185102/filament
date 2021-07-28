@@ -18,7 +18,7 @@ static unsigned short nextNumber() {
 void transform(App &app, Engine* engine, const char* entityName, bool upsideDownAllowed) {
     auto entity = app.asset->getFirstEntityByName(entityName);
 
-    if (nextNumber() % 2 == 0) {  // kill 50% of objects
+    if (nextNumber() % 4 == 0) {  // kill 25% of objects
         auto away = mat4f(
             0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f,
